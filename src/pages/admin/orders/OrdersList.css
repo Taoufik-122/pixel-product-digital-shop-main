@@ -1,0 +1,51 @@
+.btn-confirm {
+    background-color: #22c55e; /* أخضر */
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .btn-cancel {
+    background-color: #ef4444; /* أحمر */
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .btn-ship {
+    background-color: #3b82f6; /* أزرق */
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .btn-reactivate {
+    background-color: #fbbf24; /* أصفر */
+    color: black;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .btn-disabled {
+    background-color: #94a3b8;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: not-allowed;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
