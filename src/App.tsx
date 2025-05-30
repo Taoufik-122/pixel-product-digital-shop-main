@@ -2,6 +2,8 @@ import { Toaster } from "@/components/ui/toaster"; // or choose Sonner based on 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter } from 'react-router-dom';
+
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import Index from "./pages/Index";
@@ -66,14 +68,14 @@ const AppRoutes = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
+<HashRouter>
         <AuthProvider>
           <CartProvider> {/* CartProvider inside AuthProvider */}
             <Toaster />
             <AppRoutes />
           </CartProvider>
         </AuthProvider>
-      </BrowserRouter>
+</HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

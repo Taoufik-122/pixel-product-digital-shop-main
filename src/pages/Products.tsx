@@ -7,21 +7,46 @@ import CategorySidebar from "@/components/CategorySidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Product } from "@/types/product";
 
+
+
+import { supabase } from "@/lib/supabaseClient"; // أو المسار الذي أنشأت فيه ملف supabase.ts
+
 const Products = () => {
-  const [productsData, setProductsData] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products")
-      .then((res) => {
-        setProductsData(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("خطأ في جلب المنتجات:", err);
-        setLoading(false);
-      });
+    const fetchProducts = async () => {
+      const { data, error } = await supabase.from("products").select("*");
+      if (error) {
+        console.error("حدث خطأ أثناء جلب المنتجات:", error.message);
+      } else {
+        setProducts(data);
+      }
+    };
+
+    fetchProducts();
   }, []);
+
+
+
+
+
+
+//const Products = () => {
+  //const [productsData, setProductsData] = useState<Product[]>([]);
+  //const [loading, setLoading] = useState(true);
+//
+ // useEffect(() => {
+   // axios.get("http://localhost:5000/api/products")
+     // .then((res) => {
+       // setProductsData(res.data);
+       // setLoading(false);
+     // })
+     // .catch((err) => {
+       // console.error("خطأ في جلب المنتجات:", err);
+       // setLoading(false);
+  //    });
+ // }, []);//
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,8 +73,12 @@ const Products = () => {
                   <SidebarTrigger className="md:hidden" />
                 </div>
                 
+
+
+
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {productsData.map((product) => (
+                  {products.map((product: any) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
