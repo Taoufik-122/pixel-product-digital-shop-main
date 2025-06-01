@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+//import axios from "axios";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -7,6 +8,21 @@ import CategorySidebar from "@/components/CategorySidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Product } from "@/types/product";
 
+//const Products = () => {
+  //const [productsData, setProductsData] = useState<Product[]>([]);
+  //const [loading, setLoading] = useState(true);
+//
+ // useEffect(() => {
+   // axios.get("http://localhost:5000/api/products")
+     // .then((res) => {
+       // setProductsData(res.data);
+       // setLoading(false);
+     // })
+     // .catch((err) => {
+       // console.error("خطأ في جلب المنتجات:", err);
+       // setLoading(false);
+  //    });
+ // }, []);//
 
 
 import { supabase } from "@/lib/supabaseClient"; // أو المسار الذي أنشأت فيه ملف supabase.ts
@@ -26,27 +42,6 @@ const Products = () => {
 
     fetchProducts();
   }, []);
-
-
-
-
-
-
-//const Products = () => {
-  //const [productsData, setProductsData] = useState<Product[]>([]);
-  //const [loading, setLoading] = useState(true);
-//
- // useEffect(() => {
-   // axios.get("http://localhost:5000/api/products")
-     // .then((res) => {
-       // setProductsData(res.data);
-       // setLoading(false);
-     // })
-     // .catch((err) => {
-       // console.error("خطأ في جلب المنتجات:", err);
-       // setLoading(false);
-  //    });
- // }, []);//
 
   return (
     <div className="flex flex-col min-h-screen">
