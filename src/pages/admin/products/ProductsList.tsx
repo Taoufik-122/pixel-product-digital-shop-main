@@ -12,41 +12,47 @@ import {
 import { Button } from "@/components/ui/button";
 import { Product } from "@/types/product";
 import { Edit, Trash } from "lucide-react";
-import axios from "axios";
+import { supabase } from "@/lib/supabaseClient"; // تأكد من المسار الصحيح
 
 const ProductsList = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products")
-      .then((response) => {
-        setProducts(response.data);
-      })
-      .catch((error) => {
-        console.error("❌ خطأ في جلب المنتجات:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const fetchProducts = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("products")
+        .select("*");
+
+      if (error) {
+        console.error("❌ خطأ في جلب المنتجات:", error.message);
+      } else {
+        setProducts(data as Product[]);
+      }
+
+      setLoading(false);
+    };
+
+    fetchProducts();
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        const token = localStorage.getItem("authToken");
-        await axios.delete(`http://localhost:5000/api/products/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    if (window.confirm("هل أنت متأكد من حذف المنتج؟")) {
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error("❌ فشل الحذف:", error.message);
+        alert("حدث خطأ أثناء حذف المنتج.");
+      } else {
         setProducts(products.filter(product => product.id !== id));
         alert("✅ تم حذف المنتج");
-      } catch (error) {
-        console.error("❌ فشل الحذف:", error);
-        alert("حدث خطأ أثناء حذف المنتج.");
       }
     }
   };
-
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">

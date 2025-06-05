@@ -9,6 +9,7 @@ import { CreditCard, LockIcon, CheckCircle2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
+import { supabase } from "@/lib/supabaseClient"; // تأكد من استيراد عميل Supabase
 
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
@@ -32,65 +33,67 @@ const Checkout = () => {
     }
   }, [items, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    const orderData = {
-      orderNumber, // أضف هذا السطر
-      date: new Date().toISOString().slice(0, 19).replace("T", " "),
-      firstName: firstNameRef.current?.value || "",
-      lastName: lastNameRef.current?.value || "",
-      email: emailRef.current?.value || "",
-      address: addressRef.current?.value || "",
-      city: cityRef.current?.value || "",
-      postalCode: postalCodeRef.current?.value || "",
-      country: countryRef.current?.value || "",
-      items,
-    };
-    
-
-    try {
-      const res = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(orderData)
-      });
-
-      if (res.ok) {
-        clearCart();
-      
-        // ✅ تكوين رسالة الطلب
-        const message = `
-      ✅ طلب جديد
-      رقم الطلب: ${orderNumber}
-      الاسم: ${orderData.firstName} ${orderData.lastName}
-      البريد: ${orderData.email}
-      العنوان: ${orderData.address}, ${orderData.city}, ${orderData.country}
-      الرمز البريدي: ${orderData.postalCode}
-      المنتجات:
-      ${items.map((item) => `- ${item.product.title} × ${item.quantity} = ${item.product.price * item.quantity} درهم`).join("\n")}
-      المجموع: ${totalPrice} درهم
-        `.trim();
-      
-        // ✅ إرسال إلى WhatsApp
-        const phoneNumber = "212667120556"; // 🇲🇦 بدون 0 مع كود الدولة
-        const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappURL, "_blank");
-      
-        navigate("/checkout/success", { state: { orderNumber } });
-      }
-       else {
-        toast({ title: "فشل حفظ الطلب", variant: "destructive" });
-      }
-    } catch (error) {
-      toast({ title: "حدث خطأ أثناء إرسال الطلب", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const orderData = {
+    orderNumber,
+    date: new Date().toISOString().slice(0, 19).replace("T", " "),
+    firstName: firstNameRef.current?.value || "",
+    lastName: lastNameRef.current?.value || "",
+    email: emailRef.current?.value || "",
+    address: addressRef.current?.value || "",
+    city: cityRef.current?.value || "",
+    postalCode: postalCodeRef.current?.value || "",
+    country: countryRef.current?.value || "",
+    items,
   };
+
+  try {
+    const { data, error } = await supabase.from("orders").insert([orderData]);
+
+    if (error) {
+      toast({ title: "فشل حفظ الطلب", variant: "destructive" });
+    } else {
+      clearCart();
+
+      // تكوين رسالة الطلب بنفس التنسيق الأصلي
+      const message = `
+✅ طلب جديد
+رقم الطلب: ${orderNumber}
+الاسم: ${orderData.firstName} ${orderData.lastName}
+البريد: ${orderData.email}
+العنوان: ${orderData.address}, ${orderData.city}, ${orderData.country}
+الرمز البريدي: ${orderData.postalCode}
+المنتجات:
+${items
+  .map(
+    (item) =>
+      `- ${item.product.title} × ${item.quantity} = ${
+        item.product.price * item.quantity
+      } درهم`
+  )
+  .join("\n")}
+المجموع: ${totalPrice} درهم
+      `.trim();
+
+      // إرسال رسالة WhatsApp
+      const phoneNumber = "212667120556"; // بدون صفر وبكود الدولة
+      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+        message
+      )}`;
+      window.open(whatsappURL, "_blank");
+
+      navigate("/checkout/success", { state: { orderNumber } });
+    }
+  } catch (error) {
+    toast({ title: "حدث خطأ أثناء إرسال الطلب", variant: "destructive" });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex flex-col">

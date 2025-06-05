@@ -8,7 +8,7 @@ import CategorySidebar from "@/components/CategorySidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Product } from "@/types/product";
 import { ArrowLeft } from "lucide-react";
-import axios from "axios";
+import { supabase } from "@/lib/supabaseClient";
 
 const categoryDescriptions = {
   templates: "Professional design templates for all your creative needs",
@@ -22,22 +22,26 @@ const CategoryPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/products");
-        setProducts(response.data);
-      } catch (err) {
-        console.error("خطأ في جلب المنتجات:", err);
+useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase.from("products").select("*");
+      if (error) {
+        console.error("خطأ في جلب المنتجات:", error.message);
         setError("حدث خطأ أثناء جلب المنتجات");
-      } finally {
-        setLoading(false);
+      } else {
+        setProducts(data || []);
       }
-    };
+    } catch (err) {
+      console.error("خطأ غير متوقع في جلب المنتجات:", err);
+      setError("حدث خطأ أثناء جلب المنتجات");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProducts();
-  }, []);
+  fetchProducts();
+}, []);
 
   const normalizedCategory = category
     ? category.charAt(0).toUpperCase() + category.slice(1)

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import {
   Table,
   TableBody,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 interface Category {
   id: number;
@@ -25,28 +25,30 @@ const CategoriesList = () => {
   // جلب التصنيفات عند تحميل الصفحة
   useEffect(() => {
     const fetchCategories = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/categories");
-        setCategories(res.data);
-      } catch (error) {
-        console.error("فشل في جلب التصنيفات:", error);
-      }
-    };
+  const { data, error } = await supabase.from("categories").select("*");
+  if (error) {
+    console.error("فشل في جلب التصنيفات:", error.message);
+  } else {
+    setCategories(data);
+  }
+};
+
 
     fetchCategories();
   }, []);
 
   // حذف تصنيف
-  const handleDelete = async (id: number) => {
-    if (window.confirm("هل أنت متأكد أنك تريد حذف هذا التصنيف؟")) {
-      try {
-        await axios.delete(`http://localhost:5000/api/categories/${id}`);
-        setCategories((prev) => prev.filter((cat) => cat.id !== id));
-      } catch (error) {
-        console.error("فشل في حذف التصنيف:", error);
-      }
+ const handleDelete = async (id: number) => {
+  if (window.confirm("هل أنت متأكد أنك تريد حذف هذا التصنيف؟")) {
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+    if (error) {
+      console.error("فشل في حذف التصنيف:", error.message);
+    } else {
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
     }
-  };
+  }
+};
+
 
   return (
     <div className="container mx-auto p-4">

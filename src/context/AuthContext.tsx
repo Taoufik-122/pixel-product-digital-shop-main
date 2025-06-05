@@ -5,32 +5,20 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import jwt_decode from "jwt-decode";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { supabase } from '@/lib/supabaseClient'  // حسب المسار الصحيح لديك
 
-// واجهة التوكن المفكوك
-interface DecodedToken {
-  id: string;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-}
-
-// واجهة السياق
 interface AuthContextType {
   isAuthenticated: boolean;
-  isAdmin: boolean;
-  user: DecodedToken | null;
+  isAdmin: boolean; // هذا يعتمد على وجود role في metadata
+  user: any;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-// إنشاء السياق
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// هوك الاستخدام
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -39,75 +27,80 @@ export const useAuth = () => {
   return context;
 };
 
-// مزود السياق
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<DecodedToken | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
+  // التحقق من الجلسة عند تحميل الصفحة
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      try {
-        const decoded = jwt_decode<DecodedToken>(token);
-        setUser(decoded);
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data.user) {
+        setUser(data.user);
         setIsAuthenticated(true);
-        setIsAdmin(decoded.isAdmin);
-      } catch (error) {
-        console.error("فشل فك التوكن:", error);
-        localStorage.removeItem("authToken");
+        // تحقق من isAdmin داخل user metadata (اختياري)
+        setIsAdmin(data.user.user_metadata?.isAdmin === true);
       }
-    }
+    };
+
+    getUser();
+
+    // مراقبة التغيرات
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        setIsAuthenticated(true);
+        setIsAdmin(session.user.user_metadata?.isAdmin === true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+      }
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await axios.post("http://localhost:5000/api/login", {
-        email,
-        password,
-      });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      const { token } = response.data;
-      if (token) {
-        localStorage.setItem("authToken", token);
-        const decoded = jwt_decode<DecodedToken>(token);
-        setUser(decoded);
-        setIsAuthenticated(true);
-        setIsAdmin(decoded.isAdmin);
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("فشل تسجيل الدخول:", error);
-      alert("خطأ في تسجيل الدخول");
+    if (error) {
+      console.error("فشل تسجيل الدخول:", error.message);
+      alert("فشل تسجيل الدخول");
+    } else {
+      navigate("/");
     }
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    try {
-      const response = await axios.post("http://localhost:5000/api/signup", {
-        name,
-        email,
-        password,
-      });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          isAdmin: false, // يمكنك تخصيص هذا لاحقًا
+        },
+      },
+    });
 
-      const { token } = response.data;
-      if (token) {
-        localStorage.setItem("authToken", token);
-        const decoded = jwt_decode<DecodedToken>(token);
-        setUser(decoded);
-        setIsAuthenticated(true);
-        setIsAdmin(decoded.isAdmin);
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("فشل التسجيل:", error);
-      alert("خطأ في التسجيل");
+    if (error) {
+      console.error("فشل التسجيل:", error.message);
+      alert("فشل التسجيل");
+    } else {
+      navigate("/");
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("authToken");
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     setIsAuthenticated(false);
     setIsAdmin(false);

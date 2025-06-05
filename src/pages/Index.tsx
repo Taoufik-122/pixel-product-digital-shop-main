@@ -7,24 +7,30 @@ import Footer from "@/components/Footer";
 import { Product } from "@/types/product";
 import { ArrowRight } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
+import { supabase } from "@/lib/supabaseClient"; // import Supabase
 
 const Index = () => {
   const [productsData, setProductsData] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products")
-      .then((res) => {
-        setProductsData(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("خطأ في جلب المنتجات:", err);
-        setLoading(false);
-      });
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from("products") // اسم جدولك في Supabase
+        .select("*");
+
+      if (error) {
+        console.error("خطأ في جلب المنتجات:", error.message);
+      } else {
+        setProductsData(data as Product[]);
+      }
+
+      setLoading(false);
+    };
+
+    fetchProducts();
   }, []);
+
 
   return (
     <div className="flex flex-col min-h-screen">

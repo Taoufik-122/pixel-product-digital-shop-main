@@ -1,43 +1,31 @@
-
 import React, { useEffect, useState } from "react";
-//import axios from "axios";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import CategorySidebar from "@/components/CategorySidebar";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Product } from "@/types/product";
-
-//const Products = () => {
-  //const [productsData, setProductsData] = useState<Product[]>([]);
-  //const [loading, setLoading] = useState(true);
-//
- // useEffect(() => {
-   // axios.get("http://localhost:5000/api/products")
-     // .then((res) => {
-       // setProductsData(res.data);
-       // setLoading(false);
-     // })
-     // .catch((err) => {
-       // console.error("خطأ في جلب المنتجات:", err);
-       // setLoading(false);
-  //    });
- // }, []);//
-
-
-import { supabase } from "@/lib/supabaseClient"; // أو المسار الذي أنشأت فيه ملف supabase.ts
+import { supabase } from "@/lib/supabaseClient";
 
 const Products = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       const { data, error } = await supabase.from("products").select("*");
+
       if (error) {
-        console.error("حدث خطأ أثناء جلب المنتجات:", error.message);
+        console.error("❌ حدث خطأ أثناء جلب المنتجات:", error.message);
       } else {
-        setProducts(data);
+        setProducts(data as Product[]);
       }
+
+      setLoading(false);
     };
 
     fetchProducts();
@@ -57,26 +45,26 @@ const Products = () => {
           </div>
         </section>
 
-        {/* Products with sidebar */}
         <div className="container mx-auto px-4 mt-8">
           <SidebarProvider>
             <div className="flex w-full">
               <CategorySidebar />
               <SidebarInset className="p-4">
-                {/* Mobile sidebar trigger */}
                 <div className="mb-6">
                   <SidebarTrigger className="md:hidden" />
                 </div>
-                
 
-
-
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product: any) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
+                {loading ? (
+                  <p className="text-center">جاري التحميل...</p>
+                ) : products.length === 0 ? (
+                  <p className="text-center">لا توجد منتجات حالياً.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {products.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                )}
               </SidebarInset>
             </div>
           </SidebarProvider>

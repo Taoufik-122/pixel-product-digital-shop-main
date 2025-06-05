@@ -12,9 +12,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
-      "/api": "http://localhost:5000", // ضع هنا البورت الذي يعمل عليه سيرفر Node.js
-    },
+  
   },
   plugins: [
     react(),

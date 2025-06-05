@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/types/product";
+import { supabase } from "@/lib/supabaseClient"; // import Supabase
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,26 +17,25 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     const fetchProduct = async () => {
+      if (!id) return;
 
-      try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-        const res = await fetch(`http://localhost:5000/api/products/${id}`);
-        if (!res.ok) throw new Error("Product not found");
-        const data = await res.json();
-        setProduct({ ...data, price: parseFloat(data.price) });
-        
-      } catch (error) {
+      if (error || !data) {
         setProduct(null);
-      } finally {
-        setLoading(false);
+      } else {
+        setProduct(data as Product);
       }
+
+      setLoading(false);
     };
 
-    if (id) {
-      fetchProduct();
-    }
+    fetchProduct();
   }, [id]);
 
   if (loading) {
@@ -51,10 +51,8 @@ const ProductDetail = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-grow container mx-auto px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
-          <Button onClick={() => navigate("/")}>
-            Go back to homepage
-          </Button>
+          <h1 className="text-2xl font-bold mb-4">المنتج غير موجود</h1>
+          <Button onClick={() => navigate("/")}>الرجوع للصفحة الرئيسية</Button>
         </div>
         <Footer />
       </div>
@@ -71,7 +69,7 @@ const ProductDetail = () => {
           className="mb-8 flex items-center gap-2"
         >
           <ArrowLeft size={16} />
-          Back
+          الرجوع
         </Button>
         
         <div className="grid md:grid-cols-2 gap-8">
@@ -106,7 +104,7 @@ const ProductDetail = () => {
               className="w-full md:w-auto bg-brand-purple hover:bg-brand-purple/90 flex items-center justify-center gap-2"
             >
               <ShoppingCart size={20} />
-              Add to Cart
+              أضف إلى السلة
             </Button>
           </div>
         </div>

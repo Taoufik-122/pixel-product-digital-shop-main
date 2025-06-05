@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
-import axios from "axios";
+import { supabase } from "@/lib/supabaseClient";
 
 type ProductFormValues = {
   title: string;
@@ -49,70 +49,72 @@ const ProductForm = () => {
   const image = watch("image");
 
   // جلب التصنيفات من API
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/categories")
-      .then((response) => {
-        setCategories(response.data);
-      })
-      .catch((error) => {
-        console.error("❌ خطأ في تحميل التصنيفات:", error);
-      });
-  }, []);
-
-  // جلب بيانات المنتج في حالة التعديل
-  useEffect(() => {
-    if (id) {
-      const productId = parseInt(id);
-      axios
-        .get(`http://localhost:5000/api/products/${productId}`)
-        .then((response) => {
-          form.reset({
-            title: response.data.title,
-            description: response.data.description,
-            price: response.data.price,
-            category: response.data.category,
-            image: response.data.image,
-            featured: response.data.featured || false,
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching product:", error);
-        });
-    }
-  }, [id, form]);
-
-  // إرسال النموذج
-  const onSubmit = async (data: ProductFormValues) => {
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        alert("❌ لا يوجد توكن. الرجاء تسجيل الدخول.");
-        return;
-      }
-
-      if (isEditing) {
-        await axios.put(`http://localhost:5000/api/products/${id}`, data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        alert("✅ تم تعديل المنتج بنجاح");
-      } else {
-        await axios.post("http://localhost:5000/api/products", data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        alert("✅ تم إضافة المنتج بنجاح");
-      }
-
-      navigate("/admin/products");
-    } catch (error: any) {
-      console.error("❌ خطأ أثناء إرسال البيانات:", error);
-      if (error.response) {
-        alert("❌ فشل في حفظ المنتج. يرجى المحاولة لاحقًا.");
-      } else {
-        alert("❌ خطأ غير معروف");
-      }
+ useEffect(() => {
+  const fetchCategories = async () => {
+    const { data, error } = await supabase.from("categories").select("name");
+    if (error) {
+      console.error("❌ خطأ في تحميل التصنيفات:", error.message);
+    } else {
+      setCategories(data);
     }
   };
+  fetchCategories();
+}, []);
+
+  // جلب بيانات المنتج في حالة التعديل
+ useEffect(() => {
+  if (id) {
+    const fetchProduct = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", parseInt(id))
+        .single();
+
+      if (error) {
+        console.error("❌ خطأ في جلب المنتج:", error.message);
+      } else if (data) {
+        form.reset({
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          category: data.category,
+          image: data.image,
+          featured: data.featured || false,
+        });
+      }
+    };
+    fetchProduct();
+  }
+}, [id, form]);
+
+
+  // إرسال النموذج
+const onSubmit = async (data: ProductFormValues) => {
+  try {
+    if (isEditing) {
+      const { error } = await supabase
+        .from("products")
+        .update(data)
+        .eq("id", parseInt(id!));
+
+      if (error) throw error;
+      alert("✅ تم تعديل المنتج بنجاح");
+    } else {
+      const { error } = await supabase
+        .from("products")
+        .insert([data]);
+
+      if (error) throw error;
+      alert("✅ تم إضافة المنتج بنجاح");
+    }
+
+    navigate("/admin/products");
+  } catch (error: any) {
+    console.error("❌ خطأ أثناء إرسال البيانات:", error.message);
+    alert("❌ فشل في حفظ المنتج. يرجى المحاولة لاحقًا.");
+  }
+};
 
   return (
     <div className="container mx-auto p-4">

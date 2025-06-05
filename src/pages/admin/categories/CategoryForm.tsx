@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { 
   Form, 
   FormControl, 
@@ -12,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
+import { supabase } from "@/lib/supabaseClient";
 
 type CategoryFormValues = {
   name: string;
@@ -31,38 +31,52 @@ const CategoryForm = () => {
   });
 
   // جلب بيانات الصنف عند التعديل
-  useEffect(() => {
-    if (isEditing) {
-      axios
-        .get(`http://localhost:5000/api/categories/${id}`)
-        .then((res) => {
-          form.reset({
-            name: res.data.name,
-            slug: res.data.slug
-          });
-        })
-        .catch((err) => {
-          console.error("خطأ في جلب الصنف:", err);
-          alert("حدث خطأ أثناء تحميل الصنف.");
-        });
+useEffect(() => {
+  const fetchCategory = async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("خطأ في جلب الصنف:", error.message);
+      alert("حدث خطأ أثناء تحميل الصنف.");
+    } else {
+      form.reset({
+        name: data.name,
+        slug: data.slug,
+      });
     }
-  }, [id, isEditing, form]);
+  };
+
+  if (isEditing) {
+    fetchCategory();
+  }
+}, [id, isEditing, form]);
+
 
   // إنشاء أو تعديل التصنيف
   const onSubmit = async (data: CategoryFormValues) => {
-    try {
-      if (isEditing) {
-        await axios.put(`http://localhost:5000/api/categories/${id}`, data);
-      } else {
-        await axios.post("http://localhost:5000/api/categories", data);
-      }
-
-      navigate("/admin/categories");
-    } catch (error) {
-      console.error("فشل الحفظ:", error);
-      alert("حدث خطأ أثناء الحفظ.");
+  try {
+    if (isEditing) {
+      const { error } = await supabase
+        .from("categories")
+        .update(data)
+        .eq("id", id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("categories").insert(data);
+      if (error) throw error;
     }
-  };
+
+    navigate("/admin/categories");
+  } catch (error: any) {
+    console.error("فشل الحفظ:", error.message);
+    alert("حدث خطأ أثناء الحفظ.");
+  }
+};
+
 
   // توليد slug من الاسم تلقائياً
   const generateSlug = (name: string) => {
