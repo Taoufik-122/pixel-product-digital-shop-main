@@ -14,7 +14,7 @@ interface AuthContextType {
   isAdmin: boolean;
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<{ needsConfirmation: boolean; message?: string } | undefined>;
   logout: () => void;
   loading: boolean;
 }
@@ -171,11 +171,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // تحقق من ما إذا كان المستخدم بحاجة لتأكيد البريد الإلكتروني
       if (data.user && !data.session) {
         console.log('يحتاج المستخدم لتأكيد البريد الإلكتروني');
-        throw new Error("تم إرسال رابط التأكيد إلى بريدك الإلكتروني. يرجى التحقق من بريدك الإلكتروني.");
+        // بدلاً من throw error، نرجع رسالة نجاح
+        return {
+          needsConfirmation: true,
+          message: "تم إرسال رابط التأكيد إلى بريدك الإلكتروني. يرجى التحقق من بريدك الإلكتروني وتأكيد حسابك."
+        };
       }
       
       // إذا تم تسجيل الدخول مباشرة (بدون تأكيد)
-      navigate("/");
+      if (data.session) {
+        navigate("/");
+        return { needsConfirmation: false };
+      }
+      
     } catch (error) {
       console.error("خطأ في دالة signup:", error);
       throw error;
