@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { supabase } from "@/lib/supabaseClient"; // أو حسب المسار الذي حفظت فيه عميل supabase
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -41,41 +42,47 @@ const SignUp = () => {
       confirmPassword: "",
     },
   });
+const handleSignUp = async (values: z.infer<typeof formSchema>) => {
+  setIsLoading(true);
+  setAuthError("");
+  setSuccessMessage("");
 
-  const handleSignUp = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    setAuthError("");
-    setSuccessMessage("");
-    
-    try {
-      const result = await signup(values.name, values.email, values.password);
-      
-      // إذا كان التسجيل يتطلب تأكيد البريد الإلكتروني
-      if (result?.needsConfirmation) {
-        setSuccessMessage("تم إرسال رابط التأكيد إلى بريدك الإلكتروني. يرجى التحقق من بريدك وتأكيد حسابك قبل تسجيل الدخول.");
-        // إخفاء النموذج أو إعادة تعيينه
-        form.reset();
-      } else {
-        // التسجيل تم بنجاح بدون حاجة لتأكيد
-        navigate("/");
-      }
-    } catch (error: any) {
-      console.error("Sign up error:", error);
-      
-      // تحسين رسائل الخطأ
-      if (error.message?.includes('User already registered')) {
-        setAuthError("هذا البريد الإلكتروني مسجل مسبقاً. يرجى استخدام بريد إلكتروني آخر أو تسجيل الدخول.");
-      } else if (error.message?.includes('Password should be at least 6 characters')) {
-        setAuthError("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
-      } else if (error.message?.includes('Invalid email')) {
-        setAuthError("البريد الإلكتروني غير صحيح.");
-      } else {
-        setAuthError("حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.");
-      }
-    } finally {
-      setIsLoading(false);
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: values.email,
+      password: values.password,
+      options: {
+        data: {
+          name: values.name, // إذا كنت تريد تخزين الاسم في user_metadata
+        },
+      },
+    });
+
+    if (error) throw error;
+
+    if (data?.user && !data.user.confirmed_at) {
+      setSuccessMessage("تم إرسال رابط التأكيد إلى بريدك الإلكتروني. يرجى التحقق من بريدك.");
+      form.reset();
+    } else {
+      navigate("/");
     }
-  };
+  } catch (error: any) {
+    console.error("Sign up error:", error);
+
+    if (error.message?.includes("User already registered")) {
+      setAuthError("هذا البريد الإلكتروني مسجل مسبقًا.");
+    } else if (error.message?.includes("Password should be at least 6 characters")) {
+      setAuthError("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+    } else if (error.message?.includes("Invalid email")) {
+      setAuthError("البريد الإلكتروني غير صحيح.");
+    } else {
+      setAuthError("حدث خطأ أثناء التسجيل. حاول مجددًا.");
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <>

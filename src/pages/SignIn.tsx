@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,18 +5,33 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-// import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useAuth } from "../context/AuthContext"; // تأكد من مسار الاستيراد
+import { useAuth } from "../context/AuthContext";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters",
+  }),
 });
 
 const SignIn = () => {
@@ -25,7 +39,6 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,36 +47,34 @@ const SignIn = () => {
       password: "",
     },
   });
-// تحسين دالة handleSignIn في SignIn.tsx
-const handleSignIn = async (values: z.infer<typeof formSchema>) => {
-  setIsLoading(true);
-  setAuthError("");
-  
-  try {
-    console.log('محاولة تسجيل الدخول مع:', values.email);
-    await login(values.email, values.password);
-    console.log('نجح تسجيل الدخول، الانتقال للصفحة الرئيسية');
-    // لا تحتاج navigate هنا لأن AuthContext يقوم بذلك
-  } catch (error: any) {
-    console.error("خطأ تسجيل الدخول:", error);
-    console.error("رسالة الخطأ:", error.message);
-    
-    // تحسين رسائل الخطأ
-    if (error.message?.includes('Invalid login credentials')) {
-      setAuthError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-    } else if (error.message?.includes('Email not confirmed')) {
-      setAuthError("يرجى تأكيد البريد الإلكتروني أولاً");
-    } else if (error.message?.includes('Too many requests')) {
-      setAuthError("تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد قليل");
-    } else if (error.message?.includes('User not found')) {
-      setAuthError("المستخدم غير موجود. يرجى التسجيل أولاً");
-    } else {
-      setAuthError("حدث خطأ في تسجيل الدخول. يرجى المحاولة مرة أخرى");
+
+  const handleSignIn = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    setAuthError("");
+
+    try {
+      console.log("محاولة تسجيل الدخول مع:", values.email);
+      await login(values.email, values.password);
+      console.log("نجح تسجيل الدخول، الانتقال للصفحة الرئيسية");
+    } catch (error: any) {
+      console.error("خطأ تسجيل الدخول:", error);
+      console.error("رسالة الخطأ:", error.message);
+
+      if (error.message?.includes("Invalid login credentials")) {
+        setAuthError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+      } else if (error.message?.includes("Email not confirmed")) {
+        setAuthError("يرجى تأكيد البريد الإلكتروني أولاً");
+      } else if (error.message?.includes("Too many requests")) {
+        setAuthError("تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد قليل");
+      } else if (error.message?.includes("User not found")) {
+        setAuthError("المستخدم غير موجود. يرجى التسجيل أولاً");
+      } else {
+        setAuthError("حدث خطأ في تسجيل الدخول. يرجى المحاولة مرة أخرى");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <>
@@ -71,7 +82,9 @@ const handleSignIn = async (values: z.infer<typeof formSchema>) => {
       <div className="container max-w-md mx-auto py-10 px-4">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">
+              Sign in
+            </CardTitle>
             <CardDescription className="text-center">
               Enter your email and password to access your account
             </CardDescription>
@@ -83,7 +96,10 @@ const handleSignIn = async (values: z.infer<typeof formSchema>) => {
               </Alert>
             )}
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSignIn)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(handleSignIn)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="email"
@@ -91,11 +107,11 @@ const handleSignIn = async (values: z.infer<typeof formSchema>) => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="your@email.com" 
-                          type="email" 
-                          autoComplete="email" 
-                          {...field} 
+                        <Input
+                          placeholder="your@email.com"
+                          type="email"
+                          autoComplete="email"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -134,16 +150,26 @@ const handleSignIn = async (values: z.infer<typeof formSchema>) => {
                     </FormItem>
                   )}
                 />
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin h-4 w-4 mr-2"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Signing in...
                     </span>
