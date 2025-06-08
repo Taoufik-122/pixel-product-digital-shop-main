@@ -1,4 +1,3 @@
-// تحسينات على AuthContext.tsx
 import React, {
   createContext,
   useContext,
@@ -17,7 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  loading: boolean; // إضافة حالة التحميل
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -34,7 +33,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true); // إضافة حالة التحميل
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   // التحقق من الجلسة عند تحميل الصفحة
@@ -42,6 +41,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const getUser = async () => {
       try {
         setLoading(true);
+        
+        // فحص الأخطاء في الـ URL
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('error')) {
+          // إعادة توجيه إلى صفحة الخطأ
+          window.location.href = `/auth/error?${params.toString()}`;
+          return;
+        }
+        
         const { data, error } = await supabase.auth.getUser();
         
         if (error) {
@@ -91,7 +99,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log("محاولة تسجيل الدخول مع:", email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(), // تنظيف البريد الإلكتروني
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -113,7 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log("محاولة التسجيل مع:", email);
       
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(), // تنظيف البريد الإلكتروني
+        email: email.trim().toLowerCase(),
         password,
         options: {
           data: {
@@ -156,7 +164,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       navigate("/signin");
     } catch (error) {
       console.error("خطأ في logout:", error);
-      // في حالة تسجيل الخروج، يمكننا تجاهل الخطأ والمتابعة
       setUser(null);
       setIsAuthenticated(false);
       setIsAdmin(false);

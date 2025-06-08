@@ -27,6 +27,8 @@ import ProductForm from "./pages/admin/products/ProductForm";
 import CategoriesList from "./pages/admin/categories/CategoriesList";
 import CategoryForm from "./pages/admin/categories/CategoryForm";
 import OrdersList from "./pages/admin/orders/OrdersList";
+import AuthError from "./pages/AuthError"; // تأكد من المسار الصحيح
+
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -59,7 +61,8 @@ const AppRoutes = () => {
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/checkout/success" element={<CheckoutSuccess />} />
-
+// في داخل Router
+<Route path="/auth/error" element={<AuthError />} />
       {/* مسارات التسجيل والدخول */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
