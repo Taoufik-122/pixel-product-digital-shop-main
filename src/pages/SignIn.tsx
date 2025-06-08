@@ -34,21 +34,36 @@ const SignIn = () => {
       password: "",
     },
   });
-
-  const handleSignIn = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    setAuthError("");
+// تحسين دالة handleSignIn في SignIn.tsx
+const handleSignIn = async (values: z.infer<typeof formSchema>) => {
+  setIsLoading(true);
+  setAuthError("");
+  
+  try {
+    console.log('محاولة تسجيل الدخول مع:', values.email);
+    await login(values.email, values.password);
+    console.log('نجح تسجيل الدخول، الانتقال للصفحة الرئيسية');
+    // لا تحتاج navigate هنا لأن AuthContext يقوم بذلك
+  } catch (error: any) {
+    console.error("خطأ تسجيل الدخول:", error);
+    console.error("رسالة الخطأ:", error.message);
     
-    try {
-      await login(values.email, values.password);
-      navigate("/");
-    } catch (error) {
-      console.error("Sign in error:", error);
-      setAuthError("Invalid email or password. Please try again.");
-    } finally {
-      setIsLoading(false);
+    // تحسين رسائل الخطأ
+    if (error.message?.includes('Invalid login credentials')) {
+      setAuthError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+    } else if (error.message?.includes('Email not confirmed')) {
+      setAuthError("يرجى تأكيد البريد الإلكتروني أولاً");
+    } else if (error.message?.includes('Too many requests')) {
+      setAuthError("تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد قليل");
+    } else if (error.message?.includes('User not found')) {
+      setAuthError("المستخدم غير موجود. يرجى التسجيل أولاً");
+    } else {
+      setAuthError("حدث خطأ في تسجيل الدخول. يرجى المحاولة مرة أخرى");
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <>

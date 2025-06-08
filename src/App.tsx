@@ -1,11 +1,13 @@
-import { Toaster } from "@/components/ui/toaster"; // or choose Sonner based on your needs
+import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HashRouter } from 'react-router-dom';
+import { HashRouter, Routes, Route } from "react-router-dom";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
+
+// Pages
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import About from "./pages/About";
@@ -26,56 +28,93 @@ import CategoriesList from "./pages/admin/categories/CategoriesList";
 import CategoryForm from "./pages/admin/categories/CategoryForm";
 import OrdersList from "./pages/admin/orders/OrdersList";
 
-// داخل <Routes>
-// استيراد ProtectedRoute
+// Components
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
-const AppRoutes = () => (
-  <Routes>
-    {/* مسارات المستخدم العادية */}
-    <Route path="/" element={<Index />} />
-    <Route path="/products" element={<Products />} />
-    <Route path="/about" element={<About />} />
-    <Route path="/product/:id" element={<ProductDetail />} />
-    <Route path="/categories/:category" element={<CategoryPage />} />
-    <Route path="/cart" element={<Cart />} />
-    <Route path="/checkout" element={<Checkout />} />
-    <Route path="/checkout/success" element={<CheckoutSuccess />} />
-
-    {/* مسارات التسجيل والدخول */}
-    <Route path="/signin" element={<SignIn />} />
-    <Route path="/signup" element={<SignUp />} />
-    
-    {/* مسارات Admin محمية باستخدام ProtectedRoute */}
-    <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} />} />
-    <Route path="/admin/products" element={<ProtectedRoute element={<ProductsList />} />} />
-    <Route path="/admin/products/new" element={<ProtectedRoute element={<ProductForm />} />} />
-    <Route path="/admin/products/edit/:id" element={<ProtectedRoute element={<ProductForm />} />} />
-    <Route path="/admin/categories" element={<ProtectedRoute element={<CategoriesList />} />} />
-    <Route path="/admin/categories/new" element={<ProtectedRoute element={<CategoryForm />} />} />
-    <Route path="/admin/categories/edit/:id" element={<ProtectedRoute element={<CategoryForm />} />} />
-    <Route path="/admin/orders" element={<ProtectedRoute element={<OrdersList />} />} />
-
-    {/* Catch-all route */}
-    <Route path="*" element={<NotFound />} />
-  </Routes>
+// Loading Component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+  </div>
 );
 
+// Routes Component - يجب أن يكون داخل AuthProvider
+const AppRoutes = () => {
+  const { loading } = useAuth();
 
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  return (
+    <Routes>
+      {/* مسارات المستخدم العادية */}
+      <Route path="/" element={<Index />} />
+      <Route path="/products" element={<Products />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/product/:id" element={<ProductDetail />} />
+      <Route path="/categories/:category" element={<CategoryPage />} />
+      <Route path="/cart" element={<Cart />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/checkout/success" element={<CheckoutSuccess />} />
+
+      {/* مسارات التسجيل والدخول */}
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
+      
+      {/* مسارات Admin محمية - تتطلب صلاحيات Admin */}
+      <Route 
+        path="/admin" 
+        element={<ProtectedRoute element={<AdminDashboard />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/products" 
+        element={<ProtectedRoute element={<ProductsList />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/products/new" 
+        element={<ProtectedRoute element={<ProductForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/products/edit/:id" 
+        element={<ProtectedRoute element={<ProductForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories" 
+        element={<ProtectedRoute element={<CategoriesList />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories/new" 
+        element={<ProtectedRoute element={<CategoryForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories/edit/:id" 
+        element={<ProtectedRoute element={<CategoryForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/orders" 
+        element={<ProtectedRoute element={<OrdersList />} adminOnly={true} />} 
+      />
+
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-<HashRouter>
+      <HashRouter>
         <AuthProvider>
-          <CartProvider> {/* CartProvider inside AuthProvider */}
+          <CartProvider>
             <Toaster />
             <AppRoutes />
           </CartProvider>
         </AuthProvider>
-</HashRouter>
+      </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

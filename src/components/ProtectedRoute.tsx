@@ -1,25 +1,37 @@
-import { useNavigate } from "react-router-dom";
-// استيراد jwt_decode بشكل صحيح
-import jwt_decode from "jwt-decode";
+// components/ProtectedRoute.tsx
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
-// واجهة لتحديد البيانات المستخرجة من التوكن
-interface DecodedToken {
-  isAdmin: boolean;
-  // يمكن إضافة المزيد من الخصائص هنا إذا كانت موجودة في التوكن
+interface ProtectedRouteProps {
+  element: React.ReactElement;
+  adminOnly?: boolean;
 }
 
-const ProtectedRoute = ({ element }) => {
-  const navigate = useNavigate();
-  const token = localStorage.getItem("authToken");
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  element, 
+  adminOnly = false 
+}) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const location = useLocation();
 
-  const isAuthenticated = token ? true : false;
+  // إذا كان التطبيق ما زال يحمل
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
-  // فك التوكن وتحديد نوع البيانات باستخدام واجهة DecodedToken
-  const isAdmin = isAuthenticated ? (jwt_decode<DecodedToken>(token).isAdmin) : false;
+  // إذا لم يكن المستخدم مسجل دخول
+  if (!isAuthenticated) {
+    return <Navigate to="/signin" state={{ from: location }} replace />;
+  }
 
-  if (!isAuthenticated || !isAdmin) {
-    navigate("/signin");
-    return null;
+  // إذا كان المسار يتطلب صلاحيات Admin ولكن المستخدم ليس Admin
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return element;

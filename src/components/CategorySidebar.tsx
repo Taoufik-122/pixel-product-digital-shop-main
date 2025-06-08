@@ -50,7 +50,7 @@ const CategorySidebar = () => {
                   isActive={!category}
                   tooltip="All Products"
                 >
-                  <Link to="">
+                  <Link to="/products">
                     <Package size={20} />
                     <span>All Products</span>
                   </Link>
