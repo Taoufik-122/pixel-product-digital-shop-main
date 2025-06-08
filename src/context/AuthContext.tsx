@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // التحقق من الجلسة عند تحميل الصفحة
   useEffect(() => {
-    const getUser = async () => {
+    const handleAuthCallback = async () => {
       try {
         setLoading(true);
         
@@ -50,36 +50,65 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return;
         }
         
-        const { data, error } = await supabase.auth.getUser();
+        // معالجة التأكيد من البريد الإلكتروني - هذا هو الجزء الجديد المهم
+        console.log('فحص الجلسة الحالية...');
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("خطأ في الحصول على المستخدم:", error);
+          console.error("خطأ في الحصول على الجلسة:", error);
           return;
         }
         
-        if (data.user) {
-          setUser(data.user);
+        if (data?.session) {
+          console.log('تم العثور على جلسة نشطة:', data.session.user.email);
+          setUser(data.session.user);
           setIsAuthenticated(true);
-          setIsAdmin(data.user.user_metadata?.isAdmin === true);
+          setIsAdmin(data.session.user.user_metadata?.isAdmin === true);
+          
+          // تنظيف URL بعد التأكيد الناجح
+          if (window.location.hash.includes('access_token')) {
+            console.log('تنظيف الرابط بعد التأكيد...');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } else {
+          // إذا لم تكن هناك جلسة، تحقق من المستخدم الحالي
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          
+          if (userError) {
+            console.error("خطأ في الحصول على المستخدم:", userError);
+            return;
+          }
+          
+          if (userData.user) {
+            setUser(userData.user);
+            setIsAuthenticated(true);
+            setIsAdmin(userData.user.user_metadata?.isAdmin === true);
+          }
         }
       } catch (error) {
-        console.error("خطأ في getUser:", error);
+        console.error("خطأ في معالجة التأكيد:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    getUser();
+    handleAuthCallback();
 
-    // مراقبة التغيرات
+    // مراقبة التغيرات في حالة المصادقة
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("تغيير حالة المصادقة:", event, session);
+      console.log("تغيير حالة المصادقة:", event, session?.user?.email || null);
       setLoading(true);
       
       if (session?.user) {
         setUser(session.user);
         setIsAuthenticated(true);
         setIsAdmin(session.user.user_metadata?.isAdmin === true);
+        
+        // إذا كان هذا تسجيل دخول جديد، قم بتنظيف URL
+        if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
+          console.log('تنظيف الرابط بعد تسجيل الدخول...');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -90,6 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     return () => {
+      console.log('إزالة الاستماع لتغييرات المصادقة');
       listener?.subscription.unsubscribe();
     };
   }, []);
@@ -108,7 +138,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw error;
       }
 
-      console.log("نجح تسجيل الدخول:", data);
+      console.log("نجح تسجيل الدخول:", data.user?.email);
       navigate("/");
     } catch (error) {
       console.error("خطأ في دالة login:", error);
@@ -140,9 +170,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // تحقق من ما إذا كان المستخدم بحاجة لتأكيد البريد الإلكتروني
       if (data.user && !data.session) {
+        console.log('يحتاج المستخدم لتأكيد البريد الإلكتروني');
         throw new Error("تم إرسال رابط التأكيد إلى بريدك الإلكتروني. يرجى التحقق من بريدك الإلكتروني.");
       }
       
+      // إذا تم تسجيل الدخول مباشرة (بدون تأكيد)
       navigate("/");
     } catch (error) {
       console.error("خطأ في دالة signup:", error);
