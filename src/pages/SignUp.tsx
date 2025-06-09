@@ -78,7 +78,8 @@ const SignUp = () => {
 
       // إذا تم التسجيل بنجاح أضف المستخدم إلى جدول user
       if (data?.user) {
-        await supabase.from("user").insert({
+        await supabase.from("users").insert({
+
           id: data.user.id,
           email: values.email,
           name: values.name,

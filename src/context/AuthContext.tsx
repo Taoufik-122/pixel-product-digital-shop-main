@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>; // أضفنا دالة التسجيل
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +22,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // تحقق من صلاحية المستخدم (admin)
   const checkIsAdmin = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -40,7 +40,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // جلب المستخدم الحالي من الجلسة
   const getCurrentUser = async () => {
     setLoading(true);
     try {
@@ -85,11 +84,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     navigate("/signin");
   };
 
+  // ✅ دالة تسجيل مستخدم جديد
+  const signUp = async (email: string, password: string) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
+
+    if (data.user) {
+      // أضف المستخدم إلى جدول user المخصص
+      const { error: insertError } = await supabase.from("user").insert([
+        {
+          id: data.user.id,
+          email: data.user.email,
+          is_admin: false,
+        },
+      ]);
+
+      if (insertError) {
+        console.error("فشل إدخال المستخدم في جدول user:", insertError.message);
+      }
+
+      // تحميل بيانات الجلسة
+      await getCurrentUser();
+      navigate("/");
+    }
+
+    setLoading(false);
+  };
+
   useEffect(() => {
-    // استرجاع حالة الجلسة عند بدء التحميل
     getCurrentUser();
 
-    // مراقبة تغييرات حالة المصادقة
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
@@ -111,7 +139,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated, isAdmin, loading, login, logout, signUp }}
+    >
       {children}
     </AuthContext.Provider>
   );
