@@ -6,9 +6,8 @@ interface ProtectedRouteProps {
   element: React.ReactElement;
   adminOnly?: boolean;
 }
-
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, adminOnly = false }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -23,11 +22,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, adminOnly = fa
     return <Navigate to="/signin" replace state={{ from: location }} />;
   }
 
-  if (adminOnly && !user?.is_admin) {
+  if (adminOnly && !isAdmin) {
     return <Navigate to="/auth/error" replace />;
   }
 
   return element;
 };
 
+
 export default ProtectedRoute;
+
