@@ -28,6 +28,7 @@ import CategoriesList from "./pages/admin/categories/CategoriesList";
 import CategoryForm from "./pages/admin/categories/CategoryForm";
 import OrdersList from "./pages/admin/orders/OrdersList";
 import AuthError from "./pages/AuthError"; // تأكد من المسار الصحيح
+import EmailConfirmed from "./pages/EmailConfirmed";
 
 
 // Components
@@ -54,6 +55,8 @@ const AppRoutes = () => {
     <Routes>
       {/* مسارات المستخدم العادية */}
       <Route path="/" element={<Index />} />
+      <Route path="/email-confirmed" element={<EmailConfirmed />} />
+
       <Route path="/products" element={<Products />} />
       <Route path="/about" element={<About />} />
       <Route path="/product/:id" element={<ProductDetail />} />
