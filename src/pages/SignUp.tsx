@@ -63,7 +63,7 @@ const SignUp = () => {
     setSuccessMessage("");
 
     try {
-      // التسجيل في supabase auth
+      // تسجيل المستخدم في Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -76,15 +76,23 @@ const SignUp = () => {
 
       if (error) throw error;
 
-      // إذا تم التسجيل بنجاح أضف المستخدم إلى جدول user
+      // إذا تم التسجيل بنجاح أضف المستخدم إلى جدول users
       if (data?.user) {
-        await supabase.from("users").insert({
+        const { error: insertError } = await supabase.from("users").insert([
+          {
+            id: data.user.id,
+            email: values.email,
+            name: values.name,
+            is_admin: false,
+          },
+        ]);
 
-          id: data.user.id,
-          email: values.email,
-          name: values.name,
-          is_admin: false,
-        });
+        if (insertError) {
+          console.error("خطأ في إضافة المستخدم لجدول users:", insertError);
+          setAuthError("حدث خطأ أثناء حفظ بيانات المستخدم.");
+          setIsLoading(false);
+          return;
+        }
       }
 
       if (data?.user && !data.user.confirmed_at) {
@@ -150,6 +158,8 @@ const SignUp = () => {
                   className="space-y-4"
                   noValidate
                 >
+                  {/* حقول الإدخال هنا كما هي */}
+                  {/* الاسم */}
                   <FormField
                     control={form.control}
                     name="name"
@@ -167,6 +177,8 @@ const SignUp = () => {
                       </FormItem>
                     )}
                   />
+
+                  {/* البريد الإلكتروني */}
                   <FormField
                     control={form.control}
                     name="email"
@@ -185,6 +197,8 @@ const SignUp = () => {
                       </FormItem>
                     )}
                   />
+
+                  {/* كلمة المرور */}
                   <FormField
                     control={form.control}
                     name="password"
@@ -217,6 +231,8 @@ const SignUp = () => {
                       </FormItem>
                     )}
                   />
+
+                  {/* تأكيد كلمة المرور */}
                   <FormField
                     control={form.control}
                     name="confirmPassword"
@@ -257,6 +273,7 @@ const SignUp = () => {
                       </FormItem>
                     )}
                   />
+
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <span className="flex items-center gap-2 justify-center">
