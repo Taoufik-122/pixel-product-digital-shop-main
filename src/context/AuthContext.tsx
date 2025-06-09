@@ -22,12 +22,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
- const checkIsAdmin = async (userId: string) => {
+const checkIsAdmin = async (userId: string) => {
   try {
     const { data, error } = await supabase
-      .from("admin_role") // ⬅️ بدّل من user إلى admin_role
+      .from("admin_role")
       .select("is_admin")
-      .eq("id", userId)
+      .eq("id", userId)  // نطابق على عمود id (UUID)
       .single();
 
     setIsAdmin(!error && data?.is_admin === true);
@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsAdmin(false);
   }
 };
+
 
   const getCurrentUser = async () => {
     setLoading(true);
