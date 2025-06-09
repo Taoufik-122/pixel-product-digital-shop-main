@@ -26,6 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "../context/AuthContext";
+import { useLocation } from "react-router-dom";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -35,6 +36,9 @@ const formSchema = z.object({
 });
 
 const SignIn = () => {
+  const location = useLocation();
+const state = location.state as { message?: string };
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -90,11 +94,20 @@ const SignIn = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {authError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{authError}</AlertDescription>
-              </Alert>
-            )}
+  {/* عرض رسالة النجاح القادمة من EmailConfirmed */}
+  {state?.message && (
+    <Alert className="mb-4 border-green-200 bg-green-50 text-green-700">
+      <AlertDescription>{state.message}</AlertDescription>
+    </Alert>
+  )}
+
+  {/* عرض خطأ تسجيل الدخول إن وُجد */}
+  {authError && (
+    <Alert variant="destructive" className="mb-4">
+      <AlertDescription>{authError}</AlertDescription>
+    </Alert>
+  )}
+
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSignIn)}

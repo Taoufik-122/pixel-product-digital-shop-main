@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>; // أضفنا دالة التسجيل
+signUp: (email: string, password: string, name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,23 +22,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const checkIsAdmin = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("user")
-        .select("is_admin")
-        .eq("id", userId)
-        .single();
+ const checkIsAdmin = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("admin_role") // ⬅️ بدّل من user إلى admin_role
+      .select("is_admin")
+      .eq("id", userId)
+      .single();
 
-      if (error || !data) {
-        setIsAdmin(false);
-      } else {
-        setIsAdmin(data.is_admin === true);
-      }
-    } catch (err) {
-      setIsAdmin(false);
-    }
-  };
+    setIsAdmin(!error && data?.is_admin === true);
+  } catch (err) {
+    setIsAdmin(false);
+  }
+};
 
   const getCurrentUser = async () => {
     setLoading(true);
@@ -85,35 +81,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // ✅ دالة تسجيل مستخدم جديد
-  const signUp = async (email: string, password: string) => {
-    setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      setLoading(false);
-      throw error;
-    }
 
-    if (data.user) {
-      // أضف المستخدم إلى جدول user المخصص
-      const { error: insertError } = await supabase.from("user").insert([
-        {
-          id: data.user.id,
-          email: data.user.email,
-          is_admin: false,
+
+ const signUp = async (email: string, password: string, name: string) => {
+  setLoading(true);
+  try {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          ["Display name"]: name,
         },
-      ]);
+      },
+    });
 
-      if (insertError) {
-        console.error("فشل إدخال المستخدم في جدول user:", insertError.message);
-      }
+    if (authError) throw authError;
 
-      // تحميل بيانات الجلسة
-      await getCurrentUser();
-      navigate("/");
-    }
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("User ID is missing");
 
+    // فحص هل هو أول مستخدم؟
+    const { data: existingAdmins, error: checkError } = await supabase
+      .from("users")
+      .select("id");
+
+    if (checkError) throw checkError;
+
+    const isFirstUser = existingAdmins.length === 0;
+
+    // إدخال المستخدم في جدول users
+    const { error: insertError } = await supabase.from("users").insert([
+      {
+        id: userId,
+        email,
+        ["Display name"]: name,
+        is_admin: isFirstUser,
+      },
+    ]);
+
+    if (insertError) throw insertError;
+
+    await getCurrentUser();
+  } catch (error) {
+    throw error;
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   useEffect(() => {
     getCurrentUser();
