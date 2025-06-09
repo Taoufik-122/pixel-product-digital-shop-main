@@ -62,13 +62,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    await getCurrentUser();
-    navigate("/");
-  };
+const login = async (email: string, password: string) => {
+  setLoading(true);
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  await getCurrentUser();
+  navigate("/");
+};
+
 
   const logout = async () => {
     setLoading(true);
@@ -130,28 +131,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 };
 
-  useEffect(() => {
-    getCurrentUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          setIsAuthenticated(true);
-          await checkIsAdmin(session.user.id);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-          setIsAdmin(false);
-        }
-        setLoading(false);
+useEffect(() => {
+  const { data: authListener } = supabase.auth.onAuthStateChange(
+    async (_event, session) => {
+      setLoading(true);
+      if (session?.user) {
+        setUser(session.user);
+        setIsAuthenticated(true);
+        await checkIsAdmin(session.user.id);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsAdmin(false);
       }
-    );
+      setLoading(false);
+    }
+  );
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  // فورًا نحاول جلب الجلسة الحالية من Supabase (هذه دالة جاهزة في Supabase)
+  supabase.auth.getSession().then(({ data }) => {
+    if (data.session?.user) {
+      setUser(data.session.user);
+      setIsAuthenticated(true);
+      checkIsAdmin(data.session.user.id);
+    } else {
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+    }
+    setLoading(false);
+  });
+
+  return () => {
+    authListener.subscription.unsubscribe();
+  };
+}, []);
 
   return (
     <AuthContext.Provider
