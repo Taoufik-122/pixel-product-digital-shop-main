@@ -21,7 +21,7 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 
 // Admin pages
-import AdminDashboard from "./pages/admin/Dashboard";
+//  import AdminDashboard from "./pages/admin/Dashboard";
 import ProductsList from "./pages/admin/products/ProductsList";
 import ProductForm from "./pages/admin/products/ProductForm";
 import CategoriesList from "./pages/admin/categories/CategoriesList";
@@ -29,6 +29,7 @@ import CategoryForm from "./pages/admin/categories/CategoryForm";
 import OrdersList from "./pages/admin/orders/OrdersList";
 import AuthError from "./pages/AuthError"; // تأكد من المسار الصحيح
 import EmailConfirmed from "./pages/EmailConfirmed";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 
 // Components
@@ -71,10 +72,8 @@ const AppRoutes = () => {
       <Route path="/signup" element={<SignUp />} />
       
       {/* مسارات Admin محمية - تتطلب صلاحيات Admin */}
-      <Route 
-        path="/admin" 
-        element={<ProtectedRoute element={<AdminDashboard />} adminOnly={true} />} 
-      />
+    <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} adminOnly={true} />} />
+
       <Route 
         path="/admin/products" 
         element={<ProtectedRoute element={<ProductsList />} adminOnly={true} />} 
