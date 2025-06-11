@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
@@ -8,9 +14,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, redirectTo?: string) => Promise<void>;
   logout: () => Promise<void>;
-signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,20 +28,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-const checkIsAdmin = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from("admin_role")
-      .select("is_admin")
-      .eq("id", userId)  // نطابق على عمود id (UUID)
-      .single();
+  const checkIsAdmin = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("admin_role")
+        .select("is_admin")
+        .eq("id", userId)
+        .single();
 
-    setIsAdmin(!error && data?.is_admin === true);
-  } catch (err) {
-    setIsAdmin(false);
-  }
-};
-
+      setIsAdmin(!error && data?.is_admin === true);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
 
   const getCurrentUser = async () => {
     setLoading(true);
@@ -63,114 +68,122 @@ const checkIsAdmin = async (userId: string) => {
     }
   };
 
-const login = async (email: string, password: string) => {
-  setLoading(true);
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  await getCurrentUser();
-  navigate("/");
-};
-
+  const login = async (email: string, password: string, redirectTo = "/") => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error("فشل تسجيل الدخول: تأكد من البريد وكلمة المرور");
+      await getCurrentUser();
+      navigate(redirectTo);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const logout = async () => {
     setLoading(true);
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsAuthenticated(false);
-    setIsAdmin(false);
-    setLoading(false);
-    navigate("/signin");
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+      navigate("/signin");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ✅ دالة تسجيل مستخدم جديد
-
-
- const signUp = async (email: string, password: string, name: string) => {
-  setLoading(true);
-  try {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          ["Display name"]: name,
-        },
-      },
-    });
-
-    if (authError) throw authError;
-
-    const userId = authData.user?.id;
-    if (!userId) throw new Error("User ID is missing");
-
-    // فحص هل هو أول مستخدم؟
-    const { data: existingAdmins, error: checkError } = await supabase
-      .from("users")
-      .select("id");
-
-    if (checkError) throw checkError;
-
-    const isFirstUser = existingAdmins.length === 0;
-
-    // إدخال المستخدم في جدول users
-    const { error: insertError } = await supabase.from("users").insert([
-      {
-        id: userId,
+  const signUp = async (email: string, password: string, name: string) => {
+    setLoading(true);
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
-        ["Display name"]: name,
-        is_admin: isFirstUser,
-      },
-    ]);
+        password,
+        options: {
+          data: {
+            display_name: name, // استخدام اسم عمود مناسب
+          },
+        },
+      });
 
-    if (insertError) throw insertError;
+      if (authError) throw new Error("فشل إنشاء الحساب");
 
-    await getCurrentUser();
-  } catch (error) {
-    throw error;
-  } finally {
-    setLoading(false);
-  }
-};
+      const userId = authData.user?.id;
+      if (!userId) throw new Error("تعذر تحديد هوية المستخدم");
 
-useEffect(() => {
-  const { data: authListener } = supabase.auth.onAuthStateChange(
-    async (_event, session) => {
-      setLoading(true);
-      if (session?.user) {
-        setUser(session.user);
+      // التحقق من عدد المستخدمين قبل إدخال المستخدم
+      const { count, error: countError } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true });
+
+      if (countError) throw countError;
+      const isFirstUser = (count ?? 0) === 0;
+
+      const { error: insertError } = await supabase.from("users").insert([
+        {
+          id: userId,
+          email,
+          display_name: name,
+          is_admin: isFirstUser,
+        },
+      ]);
+
+      if (insertError) throw insertError;
+
+      await getCurrentUser();
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setLoading(true);
+        if (session?.user) {
+          setUser(session.user);
+          setIsAuthenticated(true);
+          await checkIsAdmin(session.user.id);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+        }
+        setLoading(false);
+      }
+    );
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session?.user) {
+        setUser(data.session.user);
         setIsAuthenticated(true);
-        await checkIsAdmin(session.user.id);
+        await checkIsAdmin(data.session.user.id);
       } else {
         setUser(null);
         setIsAuthenticated(false);
         setIsAdmin(false);
       }
       setLoading(false);
-    }
-  );
+    });
 
-  // فورًا نحاول جلب الجلسة الحالية من Supabase (هذه دالة جاهزة في Supabase)
-  supabase.auth.getSession().then(({ data }) => {
-    if (data.session?.user) {
-      setUser(data.session.user);
-      setIsAuthenticated(true);
-      checkIsAdmin(data.session.user.id);
-    } else {
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsAdmin(false);
-    }
-    setLoading(false);
-  });
-
-  return () => {
-    authListener.subscription.unsubscribe();
-  };
-}, []);
+    return () => {
+      authListener?.subscription?.unsubscribe?.();
+    };
+  }, []);
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, isAdmin, loading, login, logout, signUp }}
+      value={{
+        user,
+        isAuthenticated,
+        isAdmin,
+        loading,
+        login,
+        logout,
+        signUp,
+      }}
     >
       {children}
     </AuthContext.Provider>
