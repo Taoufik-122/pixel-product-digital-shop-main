@@ -25,48 +25,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
 useEffect(() => {
-  const checkSession = async () => {
-    setLoading(true);
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
-
-    if (error) {
-      console.error("فشل في الحصول على الجلسة:", error.message);
-    }
-
-    if (session?.user) {
-      console.log("🟢 الجلسة موجودة: ", session.user.email); // ✅ تحقق من الجلسة
-      setUser(session.user);
-      await checkAdmin(session.user.id);
-    } else {
-      setUser(null);
-      setIsAdmin(false);
-    }
-
-    setLoading(false);
-  };
-
-  checkSession();
-
-  const { data } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      console.log("📢 تغيير في الجلسة:", event, session?.user?.email); // ✅ Debug
+  const { data: authListener } = supabase.auth.onAuthStateChange(
+    async (_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        await checkAdmin(session.user.id);
+        console.log("🧪 AuthContext - user:", session.user);
+
+        try {
+          const { data, error } = await supabase
+            .from("admin_role")
+            .select("is_admin")
+            .ilike("email", session.user.email) // ← بدّلنا eq بـ ilike
+            .single();
+
+          console.log("🧪 Supabase admin_role result:", data);
+          console.log("❌ Supabase error:", error);
+
+          if (error) throw error;
+
+          setIsAdmin(data?.is_admin === true);
+          console.log("🧪 AuthContext - isAdmin:", data?.is_admin);
+        } catch (err) {
+          console.error("❌ Error checking admin role:", err);
+          setIsAdmin(false);
+        } finally {
+          setLoading(false);
+        }
       } else {
         setUser(null);
         setIsAdmin(false);
+        setLoading(false);
       }
     }
   );
 
   return () => {
-    data.subscription.unsubscribe();
+    authListener.subscription.unsubscribe();
   };
 }, []);
+
 
 
  const checkAdmin = async (userId: string) => {
