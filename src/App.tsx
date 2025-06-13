@@ -52,7 +52,9 @@ const LoadingSpinner = () => (
 
 // Routes Component - يجب أن يكون داخل AuthProvider
 const AppRoutes = () => {
-  const { loading } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
+
+  console.log("🧪 AppRoutes:", { user, isAdmin, loading });
 
   if (loading) {
     return <LoadingSpinner />;

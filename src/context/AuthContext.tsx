@@ -75,6 +75,7 @@ useEffect(() => {
     .select("is_admin")
     .eq("id", userId)
     .single();
+console.log("🔎 checkAdmin for", userId, "=>", data?.is_admin);
 
   if (error) {
     console.error("فشل التحقق من صلاحيات الأدمن:", error.message);
