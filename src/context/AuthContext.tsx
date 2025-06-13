@@ -66,21 +66,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const checkAdmin = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", userId)
-      .single();
+ const checkAdmin = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("is_admin")
+    .eq("id", userId)
+    .single();
 
-    if (error) {
-      console.error("فشل التحقق من صلاحيات الأدمن:", error.message);
-      setIsAdmin(false);
-      return;
-    }
+  if (error) {
+    console.error("فشل التحقق من صلاحيات الأدمن:", error.message);
+    setIsAdmin(false);
+    return;
+  }
 
-    setIsAdmin(data?.role === "admin");
-  };
+  // افترض أن is_admin هو Boolean (true/false)
+  setIsAdmin(data?.is_admin === true);
+};
+
 
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
