@@ -24,18 +24,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      setLoading(true);
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+useEffect(() => {
+  const checkSession = async () => {
+    setLoading(true);
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("فشل في الحصول على الجلسة:", error.message);
-      }
+    if (error) {
+      console.error("فشل في الحصول على الجلسة:", error.message);
+    }
 
+    if (session?.user) {
+      console.log("🟢 الجلسة موجودة: ", session.user.email); // ✅ تحقق من الجلسة
+      setUser(session.user);
+      await checkAdmin(session.user.id);
+    } else {
+      setUser(null);
+      setIsAdmin(false);
+    }
+
+    setLoading(false);
+  };
+
+  checkSession();
+
+  const { data } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      console.log("📢 تغيير في الجلسة:", event, session?.user?.email); // ✅ Debug
       if (session?.user) {
         setUser(session.user);
         await checkAdmin(session.user.id);
@@ -43,28 +60,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setIsAdmin(false);
       }
+    }
+  );
 
-      setLoading(false);
-    };
+  return () => {
+    data.subscription.unsubscribe();
+  };
+}, []);
 
-    checkSession();
-
-    const { data } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          await checkAdmin(session.user.id);
-        } else {
-          setUser(null);
-          setIsAdmin(false);
-        }
-      }
-    );
-
-    return () => {
-      data.subscription.unsubscribe();
-    };
-  }, []);
 
  const checkAdmin = async (userId: string) => {
   const { data, error } = await supabase
@@ -79,9 +82,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return;
   }
 
-  // افترض أن is_admin هو Boolean (true/false)
-  setIsAdmin(data?.is_admin === true);
+  console.log("👮‍♂️ حالة is_admin:", data?.is_admin); // ✅ طباعة القيمة الفعلية
+
+  setIsAdmin(data?.is_admin === true); // ← هذه مهمة
 };
+
 
 
   const login = async (email: string, password: string) => {
