@@ -29,7 +29,7 @@ import CategoryForm from "./pages/admin/categories/CategoryForm";
 import OrdersList from "./pages/admin/orders/OrdersList";
 import AuthError from "./pages/AuthError"; // تأكد من المسار الصحيح
 import EmailConfirmed from "./pages/EmailConfirmed";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import Dashboard from "./pages/admin/Dashboard";
 
 
 // Components
@@ -80,7 +80,7 @@ const AppRoutes = () => {
       <Route path="/signup" element={<SignUp />} />
       
       {/* مسارات Admin محمية - تتطلب صلاحيات Admin */}
-    <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} adminOnly={true} />} />
+    <Route path="/admin" element={<ProtectedRoute element={<Dashboard />} adminOnly={true} />} />
 
       <Route 
         path="/admin/products" 
