@@ -12,6 +12,8 @@ interface AuthContextType {
   user: any;
   isAdmin: boolean;
   loading: boolean;
+    isAuthenticated: boolean; // ✅ أضف هذا
+
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 signUp: (email: string, password: string, name: string) => Promise<any>;
@@ -20,9 +22,12 @@ signUp: (email: string, password: string, name: string) => Promise<any>;
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+
+
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+    const isAuthenticated = !!user;
 useEffect(() => {
   const getSession = async () => {
     const {
@@ -132,9 +137,10 @@ const signUp = async (email: string, password: string, name: string) => {
 
 
   return (
-    <AuthContext.Provider
-      value={{ user, isAdmin, loading, login, logout, signUp }}
-    >
+  <AuthContext.Provider
+  value={{ user, isAdmin, loading, login, logout, signUp, isAuthenticated }}
+>
+
       {children}
     </AuthContext.Provider>
   );

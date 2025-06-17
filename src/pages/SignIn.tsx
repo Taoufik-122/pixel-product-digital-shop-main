@@ -36,6 +36,8 @@ const formSchema = z.object({
 });
 
 const SignIn = () => {
+        const navigate = useNavigate();
+
   const location = useLocation();
 const state = location.state as { message?: string };
 
@@ -57,8 +59,11 @@ const state = location.state as { message?: string };
     setAuthError("");
 
     try {
+
       console.log("محاولة تسجيل الدخول مع:", values.email);
       await login(values.email, values.password);
+
+      navigate("/");
       console.log("نجح تسجيل الدخول، الانتقال للصفحة الرئيسية");
     } catch (error: any) {
       console.error("خطأ تسجيل الدخول:", error);
