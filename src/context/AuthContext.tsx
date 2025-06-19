@@ -28,6 +28,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
     const isAuthenticated = !!user;
+
+ const checkAdmin = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("is_admin")
+    .eq("id", userId)
+    .single();
+console.log("🔎 checkAdmin for", userId, "=>", data?.is_admin);
+
+  if (error) {
+    console.error("فشل التحقق من صلاحيات الأدمن:", error.message);
+    setIsAdmin(false);
+    return;
+  }
+
+  console.log("👮‍♂️ حالة is_admin:", data?.is_admin); // ✅ طباعة القيمة الفعلية
+
+  setIsAdmin(data?.is_admin === true); // ← هذه مهمة
+};
+
+
+
 useEffect(() => {
 const getSession = async () => {
   const {
@@ -70,24 +92,6 @@ const { data: subscription } = supabase.auth.onAuthStateChange(
 
 
 
- const checkAdmin = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("users")
-    .select("is_admin")
-    .eq("id", userId)
-    .single();
-console.log("🔎 checkAdmin for", userId, "=>", data?.is_admin);
-
-  if (error) {
-    console.error("فشل التحقق من صلاحيات الأدمن:", error.message);
-    setIsAdmin(false);
-    return;
-  }
-
-  console.log("👮‍♂️ حالة is_admin:", data?.is_admin); // ✅ طباعة القيمة الفعلية
-
-  setIsAdmin(data?.is_admin === true); // ← هذه مهمة
-};
 
 
 
