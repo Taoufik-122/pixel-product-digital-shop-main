@@ -52,15 +52,15 @@ const dashboardItems = [
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading } = useAuth();
-if (loading || isAdmin === null) {
-  return <p>جارٍ التحقق من الصلاحيات...</p>;
-}
+
 
 
 
   if (!user) return <Navigate to="/signin" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
-
+if (loading || isAdmin === null) {
+  return <p>جارٍ التحقق من الصلاحيات...</p>;
+}
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center gap-3 mb-8">
