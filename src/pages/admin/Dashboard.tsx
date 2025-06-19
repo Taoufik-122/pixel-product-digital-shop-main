@@ -52,6 +52,9 @@ const dashboardItems = [
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading } = useAuth();
+if (loading || isAdmin === null) {
+  return <p>جارٍ التحقق من الصلاحيات...</p>;
+}
 
 
 
