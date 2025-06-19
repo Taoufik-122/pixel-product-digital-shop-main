@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 // تحديث نوع السياق ليشمل signUp
 interface AuthContextType {
   user: any;
-  isAdmin: boolean;
+  isAdmin: boolean | null; // ✅ هنا كان عندك boolean فقط، يجب تغييره
   loading: boolean;
     isAuthenticated: boolean; // ✅ أضف هذا
 
@@ -25,37 +25,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   const [user, setUser] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
     const isAuthenticated = !!user;
 useEffect(() => {
-  const getSession = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+const getSession = async () => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-    console.log("📦 Initial session:", session);
+  console.log("📦 Initial session:", session);
 
-    if (session?.user) {
-      setUser(session.user);
-      checkAdmin(session.user.id);
-    }
+  if (session?.user) {
+    setUser(session.user);
+    await checkAdmin(session.user.id); // ✅ انتظر نتيجة التحقق
+  } else {
+    setUser(null);
+    setIsAdmin(false);
+  }
 
-    setLoading(false);
-  };
+  setLoading(false); // ✅ فقط بعد كل شيء
+};
 
   getSession();
 
-  const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+const { data: subscription } = supabase.auth.onAuthStateChange(
+  async (event, session) => {
     console.log("🔄 Auth state changed:", event);
     if (session?.user) {
       setUser(session.user);
-      checkAdmin(session.user.id);
+      await checkAdmin(session.user.id); // ✅ مهم
     } else {
       setUser(null);
       setIsAdmin(false);
     }
-  });
+    setLoading(false); // ✅ أضفها هنا أيضًا
+  }
+);
 
   return () => {
     subscription?.subscription.unsubscribe();
@@ -86,6 +92,8 @@ console.log("🔎 checkAdmin for", userId, "=>", data?.is_admin);
 
 
   const login = async (email: string, password: string) => {
+      setLoading(true); // ✅ أضف هذا
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -95,6 +103,8 @@ console.log("🔎 checkAdmin for", userId, "=>", data?.is_admin);
 
     setUser(data.user);
     await checkAdmin(data.user.id);
+      setLoading(false); // ✅ أضف هذا أيضًا
+
   };
 
   const logout = async () => {

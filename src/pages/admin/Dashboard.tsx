@@ -53,7 +53,7 @@ const dashboardItems = [
 const AdminDashboard = () => {
   const { user, isAdmin, loading } = useAuth();
 
-  if (loading) {
+if (loading || isAdmin === null) {
     return (
       <div className="flex items-center justify-center h-[50vh] text-muted-foreground">
         <p>جارٍ التحقق من الصلاحيات...</p>
