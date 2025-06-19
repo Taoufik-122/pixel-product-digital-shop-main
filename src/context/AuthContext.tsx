@@ -7,108 +7,101 @@ import React, {
 } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-// تحديث نوع السياق ليشمل signUp
 interface AuthContextType {
   user: any;
-  isAdmin: boolean | null; // ✅ هنا كان عندك boolean فقط، يجب تغييره
+  isAdmin: boolean | null;
   loading: boolean;
-    isAuthenticated: boolean; // ✅ أضف هذا
+  isAuthenticated: boolean;
 
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-signUp: (email: string, password: string, name: string) => Promise<any>;
+  signUp: (email: string, password: string, name: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-
-
   const [user, setUser] = useState<any>(null);
-const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-    const isAuthenticated = !!user;
 
- const checkAdmin = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("users")
-    .select("is_admin")
-    .eq("id", userId)
-    .single();
-console.log("🔎 checkAdmin for", userId, "=>", data?.is_admin);
+  const isAuthenticated = !!user;
 
-  if (error) {
-    console.error("فشل التحقق من صلاحيات الأدمن:", error.message);
-    setIsAdmin(false);
-    return;
-  }
+  const checkAdmin = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("is_admin")
+      .eq("id", userId)
+      .single();
 
-  console.log("👮‍♂️ حالة is_admin:", data?.is_admin); // ✅ طباعة القيمة الفعلية
-
-  setIsAdmin(data?.is_admin === true); // ← هذه مهمة
-};
-
-
-
-useEffect(() => {
-const getSession = async () => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  console.log("📦 Initial session:", session);
-
-  if (session?.user) {
-    setUser(session.user);
-    await checkAdmin(session.user.id); // ✅ انتظر نتيجة التحقق
-  } else {
-    setUser(null);
-    setIsAdmin(false);
-  }
-
-  setLoading(false); // ✅ فقط بعد كل شيء
-};
-
-  getSession();
-
-const { data: subscription } = supabase.auth.onAuthStateChange(
-  async (event, session) => {
-    console.log("🔄 Auth state changed:", event);
-    if (session?.user) {
-      setUser(session.user);
-      await checkAdmin(session.user.id); // ✅ مهم
-    } else {
-      setUser(null);
+    if (error) {
+      console.error("🚨 checkAdmin error:", error.message);
       setIsAdmin(false);
+      return;
     }
-    setLoading(false); // ✅ أضفها هنا أيضًا
-  }
-);
 
-  return () => {
-    subscription?.subscription.unsubscribe();
+    console.log("👮‍♂️ is_admin from DB:", data?.is_admin);
+    setIsAdmin(data?.is_admin === true);
   };
-}, []);
 
+  useEffect(() => {
+    const initAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
+      console.log("📦 Initial session:", session);
 
+      if (session?.user) {
+        setUser(session.user);
+        await checkAdmin(session.user.id); // ✅ انتظر التحقق
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+      }
 
+      setLoading(false); // ✅ بعد التحقق
+    };
 
+    initAuth();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("🔄 Auth state changed:", event);
+
+        if (session?.user) {
+          setUser(session.user);
+          await checkAdmin(session.user.id);
+        } else {
+          setUser(null);
+          setIsAdmin(false);
+        }
+
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription?.subscription.unsubscribe();
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
-      setLoading(true); // ✅ أضف هذا
+    setLoading(true);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
 
     setUser(data.user);
     await checkAdmin(data.user.id);
-      setLoading(false); // ✅ أضف هذا أيضًا
-
+    setLoading(false);
   };
 
   const logout = async () => {
@@ -117,44 +110,48 @@ const { data: subscription } = supabase.auth.onAuthStateChange(
     setIsAdmin(false);
   };
 
-const signUp = async (email: string, password: string, name: string) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: name,
+  const signUp = async (email: string, password: string, name: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
       },
-    },
-  });
+    });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  // تسجيل إضافي في جدول users (اختياري)
-  if (data.user) {
-    const { error: insertError } = await supabase.from('users').insert([
-      {
-        id: data.user.id,
-        full_name: name,
-        email: email,
-        role: 'user', // أو القيمة الافتراضية
-      },
-    ]);
-    if (insertError) {
-      console.error("خطأ عند إدخال المستخدم في جدول users:", insertError.message);
-      // لا ترمي الخطأ هنا لكي لا تفشل العملية كلها
+    if (data.user) {
+      const { error: insertError } = await supabase.from("users").insert([
+        {
+          id: data.user.id,
+          full_name: name,
+          email: email,
+          role: "user",
+        },
+      ]);
+      if (insertError) {
+        console.error("خطأ عند إدخال المستخدم:", insertError.message);
+      }
     }
-  }
 
-  return data;
-};
-
+    return data;
+  };
 
   return (
-  <AuthContext.Provider
-  value={{ user, isAdmin, loading, login, logout, signUp, isAuthenticated }}
->
-
+    <AuthContext.Provider
+      value={{
+        user,
+        isAdmin,
+        loading,
+        login,
+        logout,
+        signUp,
+        isAuthenticated,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
