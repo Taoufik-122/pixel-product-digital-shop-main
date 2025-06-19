@@ -47,11 +47,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (session?.user) {
       setUser(session.user);
       await checkAdmin(session.user.id);
+        setLoading(false); // ✅ هنا فقط بعد التحقق من isAdmin
+
     } else {
       setUser(null);
       setIsAdmin(false);
+      setLoading(false); // ✅ بعد كل شيء
+
     }
-    setLoading(false); // ✅ بعد كل شيء
   };
 
   useEffect(() => {
