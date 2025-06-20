@@ -25,28 +25,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!user;
+
+
 const checkAdmin = async (userId: string) => {
-  console.log("🔍 Checking admin for:", userId);
-  const { data, error } = await supabase
-    .from("users")
-    .select("is_admin")
-    .eq("id", userId)
-    .single();
+  try {
+    console.log("🔍 Checking admin for:", userId);
+    const { data, error } = await supabase
+      .from("users")
+      .select("is_admin")
+      .eq("id", userId)
+      .single();
 
-  if (error) {
-    console.error("❌ checkAdmin error:", error.message);
-    setIsAdmin(false);
-    return;
+    if (error) throw error;
+
+    console.log("✅ isAdmin value:", data?.is_admin);
+    return data?.is_admin === true;
+  } catch (err) {
+    console.error("❌ Error checking admin:", err);
+    return false;
   }
-
-  if (!data) {
-    console.warn("⚠️ No user data found for ID:", userId);
-    setIsAdmin(false);
-    return;
-  }
-
-  console.log("✅ isAdmin value:", data?.is_admin);
-  setIsAdmin(data?.is_admin === true);
 };
 
 
