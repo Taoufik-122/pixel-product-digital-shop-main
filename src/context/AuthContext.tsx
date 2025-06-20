@@ -43,19 +43,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAdmin(data?.is_admin === true);
   };
 
-  const handleSessionChange = async (session: any) => {
-    if (session?.user) {
-      setUser(session.user);
-      await checkAdmin(session.user.id);
-        setLoading(false); // ✅ هنا فقط بعد التحقق من isAdmin
-
-    } else {
-      setUser(null);
-      setIsAdmin(false);
-      setLoading(false); // ✅ بعد كل شيء
-
-    }
-  };
+const handleSessionChange = async (session: any) => {
+  const currentUser = session?.user || session?.session?.user;
+  if (currentUser) {
+    setUser(currentUser);
+    await checkAdmin(currentUser.id);
+    setLoading(false);
+  } else {
+    setUser(null);
+    setIsAdmin(false);
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     const init = async () => {
@@ -81,17 +80,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+const login = async (email: string, password: string) => {
+  setLoading(true);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (error) throw error;
+  if (error) throw error;
 
-    await handleSessionChange({ user: data.user });
-  };
+  // 👇 استخدم الجلسة الحقيقية هنا
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  await handleSessionChange(session);
+};
+
 
   const logout = async () => {
     await supabase.auth.signOut();
