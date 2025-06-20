@@ -1,28 +1,32 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProtectedRouteProps {
-  element: React.ReactElement;
   adminOnly?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, adminOnly = false }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ adminOnly = false }) => {
   const { user, isAdmin, loading } = useAuth();
 
-  console.log("🔐 ProtectedRoute", { user, isAdmin, loading });
+  console.log("🔐 ProtectedRoute:", { user, isAdmin, loading });
 
-  if (loading) return <div>Loading...</div>;
+  // أثناء التحميل أو عند انتظار معرفة isAdmin
+  if (loading || (user && isAdmin === null)) {
+    return <div className="flex justify-center items-center h-screen">🔄 تحميل...</div>;
+  }
 
+  // إن لم يكن هناك مستخدم، أعد التوجيه إلى صفحة تسجيل الدخول
   if (!user) {
     return <Navigate to="/signin" replace />;
   }
 
+  // إن كانت الصفحة للأدمن فقط، والمستخدم ليس أدمن
   if (adminOnly && !isAdmin) {
     return <Navigate to="/auth/error" replace />;
   }
 
-  return element;
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

@@ -29,19 +29,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 const checkAdmin = async (userId: string) => {
   try {
-    console.log("🔍 Checking admin for:", userId);
     const { data, error } = await supabase
       .from("users")
       .select("is_admin")
       .eq("id", userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Supabase error:", error);
+      return false;
+    }
 
-    console.log("✅ isAdmin value:", data?.is_admin);
-    return data?.is_admin === true;
+    if (!data) {
+      console.warn("⚠️ No user found with that ID");
+      return false;
+    }
+
+    console.log("✅ Admin check result:", data.is_admin);
+    return data.is_admin === true;
   } catch (err) {
-    console.error("❌ Error checking admin:", err);
+    console.error("❌ Unexpected error:", err);
     return false;
   }
 };
@@ -53,16 +60,16 @@ const handleSessionChange = async (session: any) => {
 
   if (currentUser) {
     setUser(currentUser);
-    // ⛔ لا تتابع قبل انتهاء checkAdmin
-    await checkAdmin(currentUser.id);
+    const isAdminValue = await checkAdmin(currentUser.id);
+    setIsAdmin(isAdminValue); // ✅ هذا هو المهم
   } else {
     setUser(null);
     setIsAdmin(false);
   }
 
-  // ✅ ضعه هنا فقط بعد الانتهاء من كل شيء
   setLoading(false);
 };
+
 
 
   useEffect(() => {
