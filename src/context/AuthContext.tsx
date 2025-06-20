@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("✅ is_admin:", data?.is_admin);
     setIsAdmin(data?.is_admin === true);
   };
-
 const handleSessionChange = async (session: any) => {
   const currentUser = session?.user || session?.session?.user;
   if (currentUser) {
@@ -89,13 +88,10 @@ const login = async (email: string, password: string) => {
 
   if (error) throw error;
 
-  // 👇 استخدم الجلسة الحقيقية هنا
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  await handleSessionChange(session);
+  const { data: sessionData } = await supabase.auth.getSession();
+  await handleSessionChange(sessionData);
 };
+
 
 
   const logout = async () => {
