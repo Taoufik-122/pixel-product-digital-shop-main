@@ -55,7 +55,12 @@ const LoadingSpinner = () => (
 const AppRoutes = () => {
   const { user, isAdmin, loading } = useAuth();
 
- 
+  const stillLoading = loading || (user && isAdmin === true);
+
+  if (stillLoading) {
+    return <LoadingSpinner />;
+  }
+
 
 
 
