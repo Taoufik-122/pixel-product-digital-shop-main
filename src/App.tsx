@@ -58,7 +58,6 @@ const AppRoutes = () => {
   console.log("🧪 AppRoutes:", { user, isAdmin, loading });
 
   if (loading) {
-    return <LoadingSpinner />;
   }
 
  
