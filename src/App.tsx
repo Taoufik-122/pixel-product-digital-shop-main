@@ -52,36 +52,20 @@ const LoadingSpinner = () => (
 
 // Routes Component - يجب أن يكون داخل AuthProvider
 
-
-
-
 const AppRoutes = () => {
   const { user, isAdmin, loading } = useAuth();
 
-  const stillLoading = loading || (user && isAdmin === null);
+ 
 
-  if (stillLoading) {
-    return <LoadingSpinner />;
-  }
+
+
 
   return (
     <Routes>
-
-  <Route element={<ProtectedRoute adminOnly />}>
-    <Route path="/admin/dashboard" element={<Dashboard />} />
-    <Route path="/admin/products" element={<ProductsList />} />
-    <Route path="/admin/products/new" element={<ProductForm />} />
-    <Route path="/admin/products/:id/edit" element={<ProductForm />} />
-    <Route path="/admin/categories" element={<CategoriesList />} />
-    <Route path="/admin/categories/new" element={<CategoryForm />} />
-    <Route path="/admin/categories/:id/edit" element={<CategoryForm />} />
-    <Route path="/admin/orders" element={<OrdersList />} />
-  </Route>
-
-
-      {/* مسارات الزوار والمستخدمين العاديين */}
+      {/* مسارات المستخدم العادية */}
       <Route path="/" element={<Index />} />
       <Route path="/email-confirmed" element={<EmailConfirmed />} />
+
       <Route path="/products" element={<Products />} />
       <Route path="/about" element={<About />} />
       <Route path="/product/:id" element={<ProductDetail />} />
@@ -89,22 +73,49 @@ const AppRoutes = () => {
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/checkout/success" element={<CheckoutSuccess />} />
+// في داخل Router
+<Route path="/auth/error" element={<AuthError />} />
+      {/* مسارات التسجيل والدخول */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/auth/error" element={<AuthError />} />
+      
+      {/* مسارات Admin محمية - تتطلب صلاحيات Admin */}
+    <Route path="/admin" element={<ProtectedRoute element={<Dashboard />} adminOnly={true} />} />
 
-      {/* مسارات الأدمن */}
-   
+      <Route 
+        path="/admin/products" 
+        element={<ProtectedRoute element={<ProductsList />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/products/new" 
+        element={<ProtectedRoute element={<ProductForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/products/edit/:id" 
+        element={<ProtectedRoute element={<ProductForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories" 
+        element={<ProtectedRoute element={<CategoriesList />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories/new" 
+        element={<ProtectedRoute element={<CategoryForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories/edit/:id" 
+        element={<ProtectedRoute element={<CategoryForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/orders" 
+        element={<ProtectedRoute element={<OrdersList />} adminOnly={true} />} 
+      />
+
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
-
-
-
-
-
-
-
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
