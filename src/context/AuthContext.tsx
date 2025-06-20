@@ -27,34 +27,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !!user;
 
   const checkAdmin = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("users")
-      .select("is_admin")
-      .eq("id", userId)
-      .single();
+  console.log("🔍 Checking admin for:", userId);
+  const { data, error } = await supabase
+    .from("users")
+    .select("is_admin")
+    .eq("id", userId)
+    .single();
 
-    if (error) {
-      console.error("❌ checkAdmin error:", error.message);
-      setIsAdmin(false);
-      return;
-    }
+  if (error) {
+    console.error("❌ checkAdmin error:", error.message);
+    setIsAdmin(false);
+    return;
+  }
 
-    setIsAdmin(data?.is_admin === true);
-  };
+  console.log("✅ isAdmin value:", data?.is_admin);
+  setIsAdmin(data?.is_admin === true);
+};
 
-  const handleSessionChange = async (session: any) => {
-    const currentUser = session?.user || session?.session?.user;
 
-    if (currentUser) {
-      setUser(currentUser);
-      await checkAdmin(currentUser.id);
-    } else {
-      setUser(null);
-      setIsAdmin(false);
-    }
+const handleSessionChange = async (session: any) => {
+  const currentUser = session?.user || session?.session?.user;
 
-    setLoading(false);
-  };
+  if (currentUser) {
+    setUser(currentUser);
+    // ⛔ لا تتابع قبل انتهاء checkAdmin
+    await checkAdmin(currentUser.id);
+  } else {
+    setUser(null);
+    setIsAdmin(false);
+  }
+
+  // ✅ ضعه هنا فقط بعد الانتهاء من كل شيء
+  setLoading(false);
+};
+
 
   useEffect(() => {
     const init = async () => {
