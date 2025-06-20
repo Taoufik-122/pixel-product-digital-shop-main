@@ -39,60 +39,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    console.log("✅ is_admin:", data?.is_admin);
     setIsAdmin(data?.is_admin === true);
   };
-const handleSessionChange = async (session: any) => {
-  const currentUser = session?.user || session?.session?.user;
-  if (currentUser) {
-    setUser(currentUser);
-    await checkAdmin(currentUser.id);
+
+  const handleSessionChange = async (session: any) => {
+    const currentUser = session?.user || session?.session?.user;
+
+    if (currentUser) {
+      setUser(currentUser);
+      await checkAdmin(currentUser.id);
+    } else {
+      setUser(null);
+      setIsAdmin(false);
+    }
+
     setLoading(false);
-  } else {
-    setUser(null);
-    setIsAdmin(false);
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     const init = async () => {
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession();
 
-      console.log("📦 Initial session:", session);
+      if (error) {
+        console.error("❌ getSession error:", error.message);
+      }
+
       await handleSessionChange(session);
     };
 
     init();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        console.log("🔄 Auth state changed:", _event);
-        await handleSessionChange(session);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("🔄 Auth state changed:", _event, session);
+      await handleSessionChange(session);
+    });
 
     return () => {
-      subscription?.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
-const login = async (email: string, password: string) => {
-  setLoading(true);
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const login = async (email: string, password: string) => {
+    setLoading(true);
 
-  if (error) throw error;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  await handleSessionChange(sessionData);
-};
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
 
-
+    const { data: sessionData } = await supabase.auth.getSession();
+    await handleSessionChange(sessionData);
+  };
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -122,6 +129,7 @@ const login = async (email: string, password: string) => {
           role: "user",
         },
       ]);
+
       if (insertError) {
         console.error("⚠️ insert user error:", insertError.message);
       }
