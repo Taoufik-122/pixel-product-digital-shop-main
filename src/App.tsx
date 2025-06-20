@@ -58,7 +58,7 @@ const AppRoutes = () => {
   const stillLoading = loading || (user && isAdmin === null);
 
   if (stillLoading) {
-    return  ;
+    
   }
 
 
