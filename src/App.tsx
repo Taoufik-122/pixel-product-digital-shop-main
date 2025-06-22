@@ -62,12 +62,6 @@ const AppRoutes = () => {
 
 
 
-const stillLoading = loading || (user && typeof isAdmin !== "boolean");
-
-if (stillLoading) {
-  return <Route path="/" />;
-}
-
 
 
   return (
