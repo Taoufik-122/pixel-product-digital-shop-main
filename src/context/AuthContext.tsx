@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
+  import jwt_decode from "jwt-decode";
 
 interface AuthContextType {
   user: any;
@@ -45,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
   };
+
 const handleSessionChange = async (session: any) => {
   const currentUser = session?.user;
 
@@ -62,7 +64,18 @@ const handleSessionChange = async (session: any) => {
   // تخزين الجلسة في localStorage
   const token = session?.access_token;
   if (token) {
-    console.log("✅ Storing token in localStorage:", token);
+    // فحص صلاحية الـ token
+    const decodedToken: any = jwt_decode(token);
+    const expiryTime = decodedToken.exp * 1000; // حول إلى وقت ميللي ثانية
+    const currentTime = Date.now();
+
+    if (currentTime > expiryTime) {
+      console.warn("❌ Token expired");
+      localStorage.removeItem("supabase.auth.token");
+      return;
+    }
+
+    console.log("✅ Token is valid and stored.");
     localStorage.setItem('supabase.auth.token', token);
   }
 };
@@ -71,15 +84,25 @@ useEffect(() => {
   const getSessionAndUser = async () => {
     try {
       const token = localStorage.getItem('supabase.auth.token');
-      console.log("Retrieved token from localStorage:", token);  // تحقق من قيمة الـ token
+      console.log("Retrieved token from localStorage:", token);
 
       if (token) {
         // تحقق من صلاحية الـ token
+        const decodedToken: any = jwt_decode(token);
+        const expiryTime = decodedToken.exp * 1000;
+        const currentTime = Date.now();
+
+        if (currentTime > expiryTime) {
+          console.warn("❌ Token expired");
+          localStorage.removeItem("supabase.auth.token");
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.setSession(token);
         if (error) {
           console.error("❌ Error setting session with token:", error);
-          // إذا حدث خطأ، أزل الـ token من localStorage
-          localStorage.removeItem('supabase.auth.token');
+          localStorage.removeItem("supabase.auth.token");
           setLoading(false);
           return;
         }
@@ -112,7 +135,6 @@ useEffect(() => {
     listener?.subscription.unsubscribe();
   };
 }, []);
-
 
   const login = async (email: string, password: string) => {
     setLoading(true);
