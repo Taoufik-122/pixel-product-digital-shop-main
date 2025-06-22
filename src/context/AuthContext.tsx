@@ -46,7 +46,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
   };
-
 const handleSessionChange = async (session: any) => {
   const currentUser = session?.user;
 
@@ -61,22 +60,11 @@ const handleSessionChange = async (session: any) => {
 
   setLoading(false);
 
-  // تخزين الجلسة في localStorage
   const token = session?.access_token;
   if (token) {
-    // فحص صلاحية الـ token
-    const decodedToken: any = jwt_decode(token);
-    const expiryTime = decodedToken.exp * 1000; // حول إلى وقت ميللي ثانية
-    const currentTime = Date.now();
-
-    if (currentTime > expiryTime) {
-      console.warn("❌ Token expired");
-      localStorage.removeItem("supabase.auth.token");
-      return;
-    }
-
-    console.log("✅ Token is valid and stored.");
+    // تخزين الـ token في localStorage
     localStorage.setItem('supabase.auth.token', token);
+    console.log("✅ Token stored in localStorage:", token);
   }
 };
 
@@ -136,38 +124,40 @@ useEffect(() => {
   };
 }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
+const login = async (email: string, password: string) => {
+  setLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (error) {
-        console.error("❌ Login Error:", error.message);
-        setLoading(false);
-        throw error;
-      }
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      await handleSessionChange(sessionData);
-
+    if (error) {
+      console.error("❌ Login Error:", error.message);
       setLoading(false);
-
-      // التوجيه بعد تسجيل الدخول
-      const navigate = useNavigate();
-      if (isAdmin) {
-        navigate("/admin");
-      } else {
-        navigate("/home");
-      }
-    } catch (err) {
-      console.error("❌ Unexpected Error:", err);
-      setLoading(false);
+      throw error;
     }
-  };
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    await handleSessionChange(sessionData);
+
+    setLoading(false);
+
+    // تحقق من تخزين الـ token بعد تسجيل الدخول
+    console.log("✅ Token after login:", localStorage.getItem('supabase.auth.token'));
+
+    const navigate = useNavigate();
+    if (isAdmin) {
+      navigate("/admin");
+    } else {
+      navigate("/home");
+    }
+  } catch (err) {
+    console.error("❌ Unexpected Error:", err);
+    setLoading(false);
+  }
+};
 
   const logout = async () => {
     await supabase.auth.signOut();
