@@ -70,6 +70,7 @@ const handleSessionChange = async (session: any) => {
 
   setLoading(false);  // إيقاف الـ loading
 };
+
 useEffect(() => {
   const getSessionAndUser = async () => {
     try {
@@ -79,7 +80,11 @@ useEffect(() => {
         setLoading(false);
         return;
       }
-      await handleSessionChange(data.session);  // تحديث الجلسة مباشرة بعد تحميل الصفحة
+      
+      // تحقق من الـ token في localStorage
+      console.log(localStorage.getItem('supabase.auth.token')); // هنا يتم التحقق من الـ token
+      
+      await handleSessionChange(data.session); // تحديث الجلسة مباشرة بعد تحميل الصفحة
     } catch (err) {
       console.error("❌ Unexpected session fetch error:", err);
       setLoading(false);
