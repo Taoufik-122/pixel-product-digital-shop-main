@@ -54,6 +54,7 @@ const checkAdmin = async (userId: string) => {
   }
 };
 
+
 const handleSessionChange = async (session: any) => {
   const currentUser = session?.user;
 
@@ -68,50 +69,12 @@ const handleSessionChange = async (session: any) => {
 
   setLoading(false);
 
+  // تخزين الجلسة في localStorage
   const token = session?.access_token;
   if (token) {
     localStorage.setItem('supabase.auth.token', token);
   }
 };
-useEffect(() => {
-  const getSessionAndUser = async () => {
-    try {
-      const token = localStorage.getItem('supabase.auth.token');
-      if (token) {
-        // إذا كان هناك توكن مخزن في localStorage، استخدم getSession بدلاً من setSession
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("❌ Error getting session:", error);
-          setLoading(false);
-          return;
-        }
-        await handleSessionChange(data.session);
-      } else {
-        // إذا لم يكن هناك توكن، تحقق من الجلسة العادية
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("❌ Error getting session:", error);
-          setLoading(false);
-          return;
-        }
-        await handleSessionChange(data.session);
-      }
-    } catch (err) {
-      console.error("❌ Unexpected session fetch error:", err);
-      setLoading(false);
-    }
-  };
-
-  getSessionAndUser();
-
-  const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    await handleSessionChange(session);
-  });
-
-  return () => {
-    listener?.subscription.unsubscribe();
-  };
-}, []);
 
 const login = async (email: string, password: string) => {
   setLoading(true);
@@ -133,15 +96,14 @@ const login = async (email: string, password: string) => {
 
     setLoading(false);
 
-    // تأكد من أن isAdmin و user تم تعيينهما قبل التوجيه
+    // التوجيه بعد تسجيل الدخول
     const navigate = useNavigate();
-    if (isAdmin !== null) {
-      if (isAdmin) {
-        navigate("/admin");
-      } else {
-        navigate("/home");
-      }
+    if (isAdmin) {
+      navigate("/admin");
+    } else {
+      navigate("/home");
     }
+
   } catch (err) {
     console.error("❌ Unexpected Error:", err);
     setLoading(false);
