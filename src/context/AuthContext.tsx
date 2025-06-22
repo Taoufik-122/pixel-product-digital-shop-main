@@ -55,50 +55,31 @@ const checkAdmin = async (userId: string) => {
 };
 
 
+
 const handleSessionChange = async (session: any) => {
   const currentUser = session?.user;
 
   if (currentUser) {
     setUser(currentUser);
     const isAdminValue = await checkAdmin(currentUser.id);
-    setIsAdmin(isAdminValue);
+    setIsAdmin(isAdminValue);  // تعيين القيمة بعد التحقق من الـ admin
   } else {
     setUser(null);
     setIsAdmin(false);
   }
 
-  setLoading(false);
-
-  // تخزين الجلسة في localStorage
-  const token = session?.access_token;
-  if (token) {
-    localStorage.setItem('supabase.auth.token', token);
-  }
+  setLoading(false);  // إيقاف الـ loading
 };
-
 useEffect(() => {
   const getSessionAndUser = async () => {
     try {
-      const token = localStorage.getItem('supabase.auth.token');
-      if (token) {
-        // قم بإعادة الجلسة بناءً على التوكن المخزن
-        const { data, error } = await supabase.auth.setSession(token);
-        if (error) {
-          console.error("❌ Error setting session:", error);
-          setLoading(false);
-          return;
-        }
-        await handleSessionChange(data.session);
-      } else {
-        // إذا لم يكن هناك توكن، تحقق من الجلسة العادية
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("❌ Error getting session:", error);
-          setLoading(false);
-          return;
-        }
-        await handleSessionChange(data.session);
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("❌ Error getting session:", error);
+        setLoading(false);
+        return;
       }
+      await handleSessionChange(data.session);  // تحديث الجلسة مباشرة بعد تحميل الصفحة
     } catch (err) {
       console.error("❌ Unexpected session fetch error:", err);
       setLoading(false);
@@ -116,6 +97,7 @@ useEffect(() => {
   };
 }, []);
 
+
 const login = async (email: string, password: string) => {
   setLoading(true);
 
@@ -131,17 +113,18 @@ const login = async (email: string, password: string) => {
       throw error;
     }
 
+    // عند نجاح تسجيل الدخول، استرجع الجلسة
     const { data: sessionData } = await supabase.auth.getSession();
     await handleSessionChange(sessionData);
 
     setLoading(false);
 
-    // التوجيه بعد تسجيل الدخول
+    // التوجيه إلى الصفحة المناسبة بعد تسجيل الدخول
     const navigate = useNavigate();
     if (isAdmin) {
-      navigate("/admin");
+      navigate("/admin");  // إذا كان المستخدم admin، انتقل إلى لوحة التحكم
     } else {
-      navigate("/home");
+      navigate("/home");  // أو إلى الصفحة الرئيسية للمستخدم العادي
     }
 
   } catch (err) {
@@ -149,7 +132,6 @@ const login = async (email: string, password: string) => {
     setLoading(false);
   }
 };
-
 
   const logout = async () => {
     await supabase.auth.signOut();
