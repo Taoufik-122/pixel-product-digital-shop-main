@@ -79,14 +79,6 @@ useEffect(() => {
     await handleSessionChange(session);
   });
 
-  // فوراً بعد mount، نجرب نستخدم الجلسة الحالية (حتى لو null)
-  supabase.auth.getSession().then(async ({ data, error }) => {
-    if (error) {
-      console.error("❌ getSession error:", error.message);
-    }
-    await handleSessionChange(data.session);
-  });
-
   return () => {
     subscription?.unsubscribe();
   };

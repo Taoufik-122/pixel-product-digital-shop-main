@@ -59,11 +59,16 @@ const LoadingSpinner = () => (
 const AppRoutes = () => {
   const { user, isAdmin, loading } = useAuth();
 
-  const stillLoading = loading || (user && isAdmin === null);
 
-  if (stillLoading) {
-    return <LoadingSpinner />; // ✅ عرض مؤشر التحميل
-  }
+
+
+const stillLoading = loading || (user && typeof isAdmin !== "boolean");
+
+if (stillLoading) {
+  return <LoadingSpinner />;
+}
+
+
 
   return (
     <Routes>
