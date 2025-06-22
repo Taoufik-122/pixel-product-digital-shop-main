@@ -62,7 +62,9 @@ const AppRoutes = () => {
 
 
 
-
+if (loading) {
+  return <LoadingSpinner />; // ⏳ لا تعرض شيء قبل انتهاء التحقق
+}
 
   return (
     <Routes>

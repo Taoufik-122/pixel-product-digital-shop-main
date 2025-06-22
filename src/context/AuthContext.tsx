@@ -72,18 +72,22 @@ const handleSessionChange = async (session: any) => {
 
 
 useEffect(() => {
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    console.log("🔄 Auth state changed:", _event, session);
-    await handleSessionChange(session);
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null);
+    setLoading(false); // ✅ لا تعرض البيانات حتى تكون false
   });
 
-  return () => {
-    subscription?.unsubscribe();
+  // عند البداية نحاول استرجاع الجلسة
+  const getSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user ?? null);
+    setLoading(false); // ✅ لا تعرض شيء قبل هذا
   };
-}, []);
 
+  getSession();
+
+  return () => listener?.subscription.unsubscribe();
+}, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
