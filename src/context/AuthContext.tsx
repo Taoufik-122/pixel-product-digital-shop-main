@@ -71,34 +71,27 @@ const handleSessionChange = async (session: any) => {
 };
 
 
+useEffect(() => {
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    console.log("🔄 Auth state changed:", _event, session);
+    await handleSessionChange(session);
+  });
 
-  useEffect(() => {
-    const init = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+  // فوراً بعد mount، نجرب نستخدم الجلسة الحالية (حتى لو null)
+  supabase.auth.getSession().then(async ({ data, error }) => {
+    if (error) {
+      console.error("❌ getSession error:", error.message);
+    }
+    await handleSessionChange(data.session);
+  });
 
-      if (error) {
-        console.error("❌ getSession error:", error.message);
-      }
+  return () => {
+    subscription?.unsubscribe();
+  };
+}, []);
 
-      await handleSessionChange(session);
-    };
-
-    init();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("🔄 Auth state changed:", _event, session);
-      await handleSessionChange(session);
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
