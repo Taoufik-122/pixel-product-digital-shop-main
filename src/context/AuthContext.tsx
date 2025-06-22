@@ -56,29 +56,43 @@ const checkAdmin = async (userId: string) => {
 
 
 const handleSessionChange = async (session: any) => {
-  const currentUser = session?.user || session?.session?.user;
+  const currentUser = session?.user;
 
   if (currentUser) {
     setUser(currentUser);
     const isAdminValue = await checkAdmin(currentUser.id);
-    setIsAdmin(isAdminValue); // ✅ هذا هو المهم
+    setIsAdmin(isAdminValue);  // تعيين القيمة بعد التحقق من الـ admin
   } else {
     setUser(null);
     setIsAdmin(false);
   }
 
-  setLoading(false);
+  setLoading(false);  // إيقاف الـ loading
 };
+
 useEffect(() => {
   const getSessionAndUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    await handleSessionChange(session); // ✅ هنا
+    setLoading(true); // تفعيل الـ loading عند بدء عملية التحقق
+
+    // استرجاع الجلسة من Supabase
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error("❌ Error getting session:", error);
+      setLoading(false);
+      return;
+    }
+
+    // التحقق من الجلسة بعد استرجاعها
+    await handleSessionChange(data.session); 
+
+    setLoading(false); // إيقاف الـ loading بعد التحقق
   };
 
-  getSessionAndUser();
+  getSessionAndUser(); // استرجاع الجلسة بعد تحميل الصفحة
 
   const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    await handleSessionChange(session); // ✅ وهنا
+    await handleSessionChange(session); // التعامل مع التغييرات في الجلسة
   });
 
   return () => {
@@ -86,22 +100,32 @@ useEffect(() => {
   };
 }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
+const login = async (email: string, password: string) => {
+  setLoading(true);
 
+  try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      console.error("❌ Login Error:", error.message);
       setLoading(false);
       throw error;
     }
 
+    // عند تسجيل الدخول بنجاح، استرجع الجلسة
     const { data: sessionData } = await supabase.auth.getSession();
-    await handleSessionChange(sessionData);
-  };
+    await handleSessionChange(sessionData); // تحديث الجلسة عند تسجيل الدخول بنجاح
+
+    setLoading(false);
+  } catch (err) {
+    console.error("❌ Unexpected Error:", err);
+    setLoading(false);
+  }
+};
+
 
   const logout = async () => {
     await supabase.auth.signOut();
