@@ -21,10 +21,25 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 
 // Admin pages
+//  import AdminDashboard from "./pages/admin/Dashboard";
+import ProductsList from "./pages/admin/products/ProductsList";
+import ProductForm from "./pages/admin/products/ProductForm";
+import CategoriesList from "./pages/admin/categories/CategoriesList";
+import CategoryForm from "./pages/admin/categories/CategoryForm";
+import OrdersList from "./pages/admin/orders/OrdersList";
+import AuthError from "./pages/AuthError"; // تأكد من المسار الصحيح
+import EmailConfirmed from "./pages/EmailConfirmed";
 import Dashboard from "./pages/admin/Dashboard";
+
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
+
+
+
+
+
+
 
 const queryClient = new QueryClient();
 
@@ -35,24 +50,81 @@ const LoadingSpinner = () => (
   </div>
 );
 
+
+
+
+
+
+
 const AppRoutes = () => {
   const { user, isAdmin, loading } = useAuth();
 
-  if (loading) {
-    return <LoadingSpinner />; // ⏳ لا تعرض شيء قبل انتهاء التحقق
-  }
+
+
+
+if (loading) {
+  return <LoadingSpinner />; // ⏳ لا تعرض شيء قبل انتهاء التحقق
+}
 
   return (
     <Routes>
       {/* بقية الراوتات */}
+       {/* مسارات المستخدم العادية */}
       <Route path="/" element={<Index />} />
+      <Route path="/email-confirmed" element={<EmailConfirmed />} />
+
+      <Route path="/products" element={<Products />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/product/:id" element={<ProductDetail />} />
+      <Route path="/categories/:category" element={<CategoryPage />} />
+      <Route path="/cart" element={<Cart />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/checkout/success" element={<CheckoutSuccess />} />
+// في داخل Router
+<Route path="/auth/error" element={<AuthError />} />
+      {/* مسارات التسجيل والدخول */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/admin" element={<ProtectedRoute element={<Dashboard />} adminOnly={true} />} />
+      
+      {/* مسارات Admin محمية - تتطلب صلاحيات Admin */}
+    <Route path="/admin" element={<ProtectedRoute element={<Dashboard />} adminOnly={true} />} />
+
+      <Route 
+        path="/admin/products" 
+        element={<ProtectedRoute element={<ProductsList />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/products/new" 
+        element={<ProtectedRoute element={<ProductForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/products/edit/:id" 
+        element={<ProtectedRoute element={<ProductForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories" 
+        element={<ProtectedRoute element={<CategoriesList />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories/new" 
+        element={<ProtectedRoute element={<CategoryForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/categories/edit/:id" 
+        element={<ProtectedRoute element={<CategoryForm />} adminOnly={true} />} 
+      />
+      <Route 
+        path="/admin/orders" 
+        element={<ProtectedRoute element={<OrdersList />} adminOnly={true} />} 
+      />
+
+      {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
+
+// Routes Component - يجب أن يكون داخل AuthProvider
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -70,3 +142,8 @@ const App = () => (
 );
 
 export default App;
+
+
+
+
+

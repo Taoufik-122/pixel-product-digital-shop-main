@@ -1,7 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useNavigate } from "react-router-dom";
-  import jwt_decode from "jwt-decode";
+import { useNavigate } from "react-router-dom"; // استيراد useNavigate
 
 interface AuthContextType {
   user: any;
@@ -19,33 +24,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+
   const isAuthenticated = !!user;
 
-  const checkAdmin = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("is_admin")
-        .eq("id", userId)
-        .single();
 
-      if (error) {
-        console.error("❌ Supabase error:", error);
-        return false;
-      }
+const checkAdmin = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("is_admin")
+      .eq("id", userId)
+      .single();
 
-      if (!data) {
-        console.warn("⚠️ No user found with that ID");
-        return false;
-      }
-
-      console.log("✅ Admin check result:", data.is_admin);
-      return data.is_admin === true;
-    } catch (err) {
-      console.error("❌ Unexpected error:", err);
+    if (error) {
+      console.error("❌ Supabase error:", error);
       return false;
     }
-  };
+
+    if (!data) {
+      console.warn("⚠️ No user found with that ID");
+      return false;
+    }
+
+    console.log("✅ Admin check result:", data.is_admin);
+    return data.is_admin === true;
+  } catch (err) {
+    console.error("❌ Unexpected error:", err);
+    return false;
+  }
+};
+
 const handleSessionChange = async (session: any) => {
   const currentUser = session?.user;
 
@@ -62,42 +70,23 @@ const handleSessionChange = async (session: any) => {
 
   const token = session?.access_token;
   if (token) {
-    // تخزين الـ token في localStorage
     localStorage.setItem('supabase.auth.token', token);
-    console.log("✅ Token stored in localStorage:", token);
   }
 };
-
 useEffect(() => {
   const getSessionAndUser = async () => {
     try {
       const token = localStorage.getItem('supabase.auth.token');
-      console.log("Retrieved token from localStorage:", token);
-
       if (token) {
-        // تحقق من صلاحية الـ token
-        const decodedToken: any = jwt_decode(token);
-        const expiryTime = decodedToken.exp * 1000;
-        const currentTime = Date.now();
-
-        if (currentTime > expiryTime) {
-          console.warn("❌ Token expired");
-          localStorage.removeItem("supabase.auth.token");
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase.auth.setSession(token);
+        // إذا كان هناك توكن مخزن في localStorage، استخدم getSession بدلاً من setSession
+        const { data, error } = await supabase.auth.getSession();
         if (error) {
-          console.error("❌ Error setting session with token:", error);
-          localStorage.removeItem("supabase.auth.token");
+          console.error("❌ Error getting session:", error);
           setLoading(false);
           return;
         }
-        console.log("✅ Session set successfully");
         await handleSessionChange(data.session);
       } else {
-        console.warn("❌ No token found in localStorage.");
         // إذا لم يكن هناك توكن، تحقق من الجلسة العادية
         const { data, error } = await supabase.auth.getSession();
         if (error) {
@@ -144,20 +133,21 @@ const login = async (email: string, password: string) => {
 
     setLoading(false);
 
-    // تحقق من تخزين الـ token بعد تسجيل الدخول
-    console.log("✅ Token after login:", localStorage.getItem('supabase.auth.token'));
-
+    // تأكد من أن isAdmin و user تم تعيينهما قبل التوجيه
     const navigate = useNavigate();
-    if (isAdmin) {
-      navigate("/admin");
-    } else {
-      navigate("/home");
+    if (isAdmin !== null) {
+      if (isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/home");
+      }
     }
   } catch (err) {
     console.error("❌ Unexpected Error:", err);
     setLoading(false);
   }
 };
+
 
   const logout = async () => {
     await supabase.auth.signOut();
