@@ -69,33 +69,19 @@ const handleSessionChange = async (session: any) => {
 
   setLoading(false);
 };
-
 useEffect(() => {
   const getSessionAndUser = async () => {
     setLoading(true);
 
-    // 1. استرجاع الجلسة من Supabase
     const { data: { session } } = await supabase.auth.getSession();
-
     const user = session?.user ?? null;
     setUser(user);
 
-    // 2. إذا كان يوجد مستخدم، تحقق هل هو admin
     if (user) {
-      const { data, error } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        console.error("❌ Error fetching role:", error.message);
-        setIsAdmin(false); // أو null
-      } else {
-        setIsAdmin(data?.role === "admin");
-      }
+      const isAdminValue = await checkAdmin(user.id);
+      setIsAdmin(isAdminValue);
     } else {
-      setIsAdmin(false); // لا يوجد مستخدم
+      setIsAdmin(false);
     }
 
     setLoading(false);
@@ -103,24 +89,13 @@ useEffect(() => {
 
   getSessionAndUser();
 
-  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-    const user = session?.user ?? null;
-    setUser(user);
+  const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const currentUser = session?.user ?? null;
+    setUser(currentUser);
 
-    if (user) {
-      supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error("❌ Error fetching role:", error.message);
-            setIsAdmin(false);
-          } else {
-            setIsAdmin(data?.role === "admin");
-          }
-        });
+    if (currentUser) {
+      const isAdminValue = await checkAdmin(currentUser.id);
+      setIsAdmin(isAdminValue);
     } else {
       setIsAdmin(false);
     }
@@ -130,7 +105,6 @@ useEffect(() => {
     listener?.subscription.unsubscribe();
   };
 }, []);
-
 
   const login = async (email: string, password: string) => {
     setLoading(true);
