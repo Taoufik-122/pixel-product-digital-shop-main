@@ -54,13 +54,14 @@ const checkAdmin = async (userId: string) => {
 };
 
 
+
 const handleSessionChange = async (session: any) => {
-  const currentUser = session?.user;
+  const currentUser = session?.user || session?.session?.user;
 
   if (currentUser) {
     setUser(currentUser);
     const isAdminValue = await checkAdmin(currentUser.id);
-    setIsAdmin(isAdminValue);
+    setIsAdmin(isAdminValue); // ✅ هذا هو المهم
   } else {
     setUser(null);
     setIsAdmin(false);
@@ -68,25 +69,16 @@ const handleSessionChange = async (session: any) => {
 
   setLoading(false);
 };
-
 useEffect(() => {
   const getSessionAndUser = async () => {
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("❌ Error getting session:", error);
-      }
-      await handleSessionChange(data.session);
-    } catch (err) {
-      console.error("❌ Unexpected session fetch error:", err);
-      setLoading(false);
-    }
+    const { data: { session } } = await supabase.auth.getSession();
+    await handleSessionChange(session); // ✅ هنا
   };
 
   getSessionAndUser();
 
   const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    await handleSessionChange(session);
+    await handleSessionChange(session); // ✅ وهنا
   });
 
   return () => {
