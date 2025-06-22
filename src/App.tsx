@@ -50,7 +50,11 @@ const LoadingSpinner = () => (
   </div>
 );
 
-// Routes Component - يجب أن يكون داخل AuthProvider
+
+
+
+
+
 
 const AppRoutes = () => {
   const { user, isAdmin, loading } = useAuth();
@@ -58,16 +62,13 @@ const AppRoutes = () => {
   const stillLoading = loading || (user && isAdmin === null);
 
   if (stillLoading) {
-    
+    return <LoadingSpinner />; // ✅ عرض مؤشر التحميل
   }
-
-
-
-
 
   return (
     <Routes>
-      {/* مسارات المستخدم العادية */}
+      {/* بقية الراوتات */}
+       {/* مسارات المستخدم العادية */}
       <Route path="/" element={<Index />} />
       <Route path="/email-confirmed" element={<EmailConfirmed />} />
 
@@ -121,6 +122,8 @@ const AppRoutes = () => {
     </Routes>
   );
 };
+
+// Routes Component - يجب أن يكون داخل AuthProvider
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
