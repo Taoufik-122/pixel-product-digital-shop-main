@@ -54,37 +54,48 @@ const checkAdmin = async (userId: string) => {
   }
 };
 
-
-
 const handleSessionChange = async (session: any) => {
   const currentUser = session?.user;
 
   if (currentUser) {
     setUser(currentUser);
     const isAdminValue = await checkAdmin(currentUser.id);
-    setIsAdmin(isAdminValue);  // تعيين القيمة بعد التحقق من الـ admin
+    setIsAdmin(isAdminValue);
   } else {
     setUser(null);
     setIsAdmin(false);
   }
 
-  setLoading(false);  // إيقاف الـ loading
-};
+  setLoading(false);
 
+  const token = session?.access_token;
+  if (token) {
+    localStorage.setItem('supabase.auth.token', token);
+  }
+};
 useEffect(() => {
   const getSessionAndUser = async () => {
     try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("❌ Error getting session:", error);
-        setLoading(false);
-        return;
+      const token = localStorage.getItem('supabase.auth.token');
+      if (token) {
+        // إذا كان هناك توكن مخزن في localStorage، استخدم getSession بدلاً من setSession
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("❌ Error getting session:", error);
+          setLoading(false);
+          return;
+        }
+        await handleSessionChange(data.session);
+      } else {
+        // إذا لم يكن هناك توكن، تحقق من الجلسة العادية
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("❌ Error getting session:", error);
+          setLoading(false);
+          return;
+        }
+        await handleSessionChange(data.session);
       }
-      
-      // تحقق من الـ token في localStorage
-      console.log(localStorage.getItem('supabase.auth.token')); // هنا يتم التحقق من الـ token
-      
-      await handleSessionChange(data.session); // تحديث الجلسة مباشرة بعد تحميل الصفحة
     } catch (err) {
       console.error("❌ Unexpected session fetch error:", err);
       setLoading(false);
@@ -102,7 +113,6 @@ useEffect(() => {
   };
 }, []);
 
-
 const login = async (email: string, password: string) => {
   setLoading(true);
 
@@ -118,25 +128,26 @@ const login = async (email: string, password: string) => {
       throw error;
     }
 
-    // عند نجاح تسجيل الدخول، استرجع الجلسة
     const { data: sessionData } = await supabase.auth.getSession();
     await handleSessionChange(sessionData);
 
     setLoading(false);
 
-    // التوجيه إلى الصفحة المناسبة بعد تسجيل الدخول
+    // تأكد من أن isAdmin و user تم تعيينهما قبل التوجيه
     const navigate = useNavigate();
-    if (isAdmin) {
-      navigate("/admin");  // إذا كان المستخدم admin، انتقل إلى لوحة التحكم
-    } else {
-      navigate("/home");  // أو إلى الصفحة الرئيسية للمستخدم العادي
+    if (isAdmin !== null) {
+      if (isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/home");
+      }
     }
-
   } catch (err) {
     console.error("❌ Unexpected Error:", err);
     setLoading(false);
   }
 };
+
 
   const logout = async () => {
     await supabase.auth.signOut();
