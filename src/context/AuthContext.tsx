@@ -26,111 +26,87 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAuthenticated = !!user;
 
-
-const checkAdmin = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("is_admin")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error("❌ Supabase error:", error);
-      return false;
-    }
-
-    if (!data) {
-      console.warn("⚠️ No user found with that ID");
-      return false;
-    }
-
-    console.log("✅ Admin check result:", data.is_admin);
-    return data.is_admin === true;
-  } catch (err) {
-    console.error("❌ Unexpected error:", err);
-    return false;
-  }
-};
-
-
-
-const handleSessionChange = async (session: any) => {
-  const currentUser = session?.user || session?.session?.user;
-
-  if (currentUser) {
-    setUser(currentUser);
-    const isAdminValue = await checkAdmin(currentUser.id);
-    setIsAdmin(isAdminValue); // ✅ هذا هو المهم
-  } else {
-    setUser(null);
-    setIsAdmin(false);
-  }
-
-  setLoading(false);
-};
-
-useEffect(() => {
-  const getSessionAndUser = async () => {
-    setLoading(true);
-
-    // 1. استرجاع الجلسة من Supabase
-    const { data: { session } } = await supabase.auth.getSession();
-
-    const user = session?.user ?? null;
-    setUser(user);
-
-    // 2. إذا كان يوجد مستخدم، تحقق هل هو admin
-    if (user) {
+  // التحقق من حالة الصلاحيات
+  const checkAdmin = async (userId: string) => {
+    try {
       const { data, error } = await supabase
         .from("users")
-        .select("role")
-        .eq("id", user.id)
+        .select("is_admin")  // إذا كان اسم العمود هو 'is_admin' في جدول users
+        .eq("id", userId)
         .single();
 
       if (error) {
-        console.error("❌ Error fetching role:", error.message);
-        setIsAdmin(false); // أو null
-      } else {
-        setIsAdmin(data?.role === "admin");
+        console.error("❌ Supabase error:", error);
+        return false;
       }
+
+      if (!data) {
+        console.warn("⚠️ No user found with that ID");
+        return false;
+      }
+
+      console.log("✅ Admin check result:", data.is_admin);
+      return data.is_admin === true;
+    } catch (err) {
+      console.error("❌ Unexpected error:", err);
+      return false;
+    }
+  };
+
+  const handleSessionChange = async (session: any) => {
+    const currentUser = session?.user || session?.session?.user;
+
+    if (currentUser) {
+      setUser(currentUser);
+      const isAdminValue = await checkAdmin(currentUser.id);
+      setIsAdmin(isAdminValue); // ✅ هذا هو المهم
     } else {
-      setIsAdmin(false); // لا يوجد مستخدم
+      setUser(null);
+      setIsAdmin(false);
     }
 
     setLoading(false);
   };
 
-  getSessionAndUser();
+  useEffect(() => {
+    const getSessionAndUser = async () => {
+      setLoading(true);
 
-  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-    const user = session?.user ?? null;
-    setUser(user);
+      // استرجاع الجلسة من Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
-    if (user) {
-      supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error("❌ Error fetching role:", error.message);
-            setIsAdmin(false);
-          } else {
-            setIsAdmin(data?.role === "admin");
-          }
-        });
-    } else {
-      setIsAdmin(false);
-    }
-  });
+      // تحقق من حالة الادمن
+      if (currentUser) {
+        const isAdminValue = await checkAdmin(currentUser.id);
+        setIsAdmin(isAdminValue);
+      } else {
+        setIsAdmin(false); // لا يوجد مستخدم
+      }
 
-  return () => {
-    listener?.subscription.unsubscribe();
-  };
-}, []);
+      setLoading(false);
+    };
 
+    // استرجاع الجلسة عند تحميل الصفحة
+    getSessionAndUser();
+
+    // متابعة التغييرات في الجلسة
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        checkAdmin(currentUser.id).then((isAdminValue) => setIsAdmin(isAdminValue));
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
@@ -174,7 +150,7 @@ useEffect(() => {
           id: data.user.id,
           full_name: name,
           email,
-          role: "user",
+          role: "user",  // تأكد من أن العمود هنا يتوافق مع هيكل قاعدة البيانات
         },
       ]);
 
