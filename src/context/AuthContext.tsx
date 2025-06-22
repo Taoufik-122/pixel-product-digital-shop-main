@@ -71,34 +71,14 @@ const handleSessionChange = async (session: any) => {
 };
 useEffect(() => {
   const getSessionAndUser = async () => {
-    setLoading(true);
-
     const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
-    setUser(user);
-
-    if (user) {
-      const isAdminValue = await checkAdmin(user.id);
-      setIsAdmin(isAdminValue);
-    } else {
-      setIsAdmin(false);
-    }
-
-    setLoading(false);
+    await handleSessionChange(session); // ✅ هنا
   };
 
   getSessionAndUser();
 
   const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    const currentUser = session?.user ?? null;
-    setUser(currentUser);
-
-    if (currentUser) {
-      const isAdminValue = await checkAdmin(currentUser.id);
-      setIsAdmin(isAdminValue);
-    } else {
-      setIsAdmin(false);
-    }
+    await handleSessionChange(session); // ✅ وهنا
   });
 
   return () => {
