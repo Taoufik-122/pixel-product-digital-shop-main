@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useNavigate } from "react-router-dom"; // استيراد useNavigate
 
 interface AuthContextType {
   user: any;
@@ -69,36 +70,33 @@ const handleSessionChange = async (session: any) => {
 
   setLoading(false);  // إيقاف الـ loading
 };
-
 useEffect(() => {
   const getSessionAndUser = async () => {
-    setLoading(true); // تفعيل الـ loading عند بدء عملية التحقق
-
-    // استرجاع الجلسة من Supabase
-    const { data, error } = await supabase.auth.getSession();
-
-    if (error) {
-      console.error("❌ Error getting session:", error);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("❌ Error getting session:", error);
+        setLoading(false);
+        return;
+      }
+      await handleSessionChange(data.session);  // تحديث الجلسة مباشرة بعد تحميل الصفحة
+    } catch (err) {
+      console.error("❌ Unexpected session fetch error:", err);
       setLoading(false);
-      return;
     }
-
-    // التحقق من الجلسة بعد استرجاعها
-    await handleSessionChange(data.session); 
-
-    setLoading(false); // إيقاف الـ loading بعد التحقق
   };
 
-  getSessionAndUser(); // استرجاع الجلسة بعد تحميل الصفحة
+  getSessionAndUser();
 
   const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    await handleSessionChange(session); // التعامل مع التغييرات في الجلسة
+    await handleSessionChange(session);
   });
 
   return () => {
     listener?.subscription.unsubscribe();
   };
 }, []);
+
 
 const login = async (email: string, password: string) => {
   setLoading(true);
@@ -115,17 +113,25 @@ const login = async (email: string, password: string) => {
       throw error;
     }
 
-    // عند تسجيل الدخول بنجاح، استرجع الجلسة
+    // عند نجاح تسجيل الدخول، استرجع الجلسة
     const { data: sessionData } = await supabase.auth.getSession();
-    await handleSessionChange(sessionData); // تحديث الجلسة عند تسجيل الدخول بنجاح
+    await handleSessionChange(sessionData);
 
     setLoading(false);
+
+    // التوجيه إلى الصفحة المناسبة بعد تسجيل الدخول
+    const navigate = useNavigate();
+    if (isAdmin) {
+      navigate("/admin");  // إذا كان المستخدم admin، انتقل إلى لوحة التحكم
+    } else {
+      navigate("/home");  // أو إلى الصفحة الرئيسية للمستخدم العادي
+    }
+
   } catch (err) {
     console.error("❌ Unexpected Error:", err);
     setLoading(false);
   }
 };
-
 
   const logout = async () => {
     await supabase.auth.signOut();
