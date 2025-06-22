@@ -70,24 +70,67 @@ const handleSessionChange = async (session: any) => {
   setLoading(false);
 };
 
-
 useEffect(() => {
-  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-    setUser(session?.user ?? null);
-    setLoading(false); // ✅ لا تعرض البيانات حتى تكون false
-  });
+  const getSessionAndUser = async () => {
+    setLoading(true);
 
-  // عند البداية نحاول استرجاع الجلسة
-  const getSession = async () => {
+    // 1. استرجاع الجلسة من Supabase
     const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user ?? null);
-    setLoading(false); // ✅ لا تعرض شيء قبل هذا
+
+    const user = session?.user ?? null;
+    setUser(user);
+
+    // 2. إذا كان يوجد مستخدم، تحقق هل هو admin
+    if (user) {
+      const { data, error } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("❌ Error fetching role:", error.message);
+        setIsAdmin(false); // أو null
+      } else {
+        setIsAdmin(data?.role === "admin");
+      }
+    } else {
+      setIsAdmin(false); // لا يوجد مستخدم
+    }
+
+    setLoading(false);
   };
 
-  getSession();
+  getSessionAndUser();
 
-  return () => listener?.subscription.unsubscribe();
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const user = session?.user ?? null;
+    setUser(user);
+
+    if (user) {
+      supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("❌ Error fetching role:", error.message);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(data?.role === "admin");
+          }
+        });
+    } else {
+      setIsAdmin(false);
+    }
+  });
+
+  return () => {
+    listener?.subscription.unsubscribe();
+  };
 }, []);
+
 
   const login = async (email: string, password: string) => {
     setLoading(true);
