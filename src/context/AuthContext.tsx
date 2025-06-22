@@ -76,6 +76,46 @@ const handleSessionChange = async (session: any) => {
   }
 };
 
+useEffect(() => {
+  const getSessionAndUser = async () => {
+    try {
+      const token = localStorage.getItem('supabase.auth.token');
+      if (token) {
+        // قم بإعادة الجلسة بناءً على التوكن المخزن
+        const { data, error } = await supabase.auth.setSession(token);
+        if (error) {
+          console.error("❌ Error setting session:", error);
+          setLoading(false);
+          return;
+        }
+        await handleSessionChange(data.session);
+      } else {
+        // إذا لم يكن هناك توكن، تحقق من الجلسة العادية
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("❌ Error getting session:", error);
+          setLoading(false);
+          return;
+        }
+        await handleSessionChange(data.session);
+      }
+    } catch (err) {
+      console.error("❌ Unexpected session fetch error:", err);
+      setLoading(false);
+    }
+  };
+
+  getSessionAndUser();
+
+  const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    await handleSessionChange(session);
+  });
+
+  return () => {
+    listener?.subscription.unsubscribe();
+  };
+}, []);
+
 const login = async (email: string, password: string) => {
   setLoading(true);
 
