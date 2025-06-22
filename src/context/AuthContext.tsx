@@ -6,7 +6,6 @@ import React, {
   ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useNavigate } from "react-router-dom"; // استيراد useNavigate
 
 interface AuthContextType {
   user: any;
@@ -57,39 +56,74 @@ const checkAdmin = async (userId: string) => {
 
 
 const handleSessionChange = async (session: any) => {
-  const currentUser = session?.user;
+  const currentUser = session?.user || session?.session?.user;
 
   if (currentUser) {
     setUser(currentUser);
     const isAdminValue = await checkAdmin(currentUser.id);
-    setIsAdmin(isAdminValue);  // تعيين القيمة بعد التحقق من الـ admin
+    setIsAdmin(isAdminValue); // ✅ هذا هو المهم
   } else {
     setUser(null);
     setIsAdmin(false);
   }
 
-  setLoading(false);  // إيقاف الـ loading
+  setLoading(false);
 };
+
 useEffect(() => {
   const getSessionAndUser = async () => {
-    try {
-      const { data, error } = await supabase.auth.getSession();
+    setLoading(true);
+
+    // 1. استرجاع الجلسة من Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const user = session?.user ?? null;
+    setUser(user);
+
+    // 2. إذا كان يوجد مستخدم، تحقق هل هو admin
+    if (user) {
+      const { data, error } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
       if (error) {
-        console.error("❌ Error getting session:", error);
-        setLoading(false);
-        return;
+        console.error("❌ Error fetching role:", error.message);
+        setIsAdmin(false); // أو null
+      } else {
+        setIsAdmin(data?.role === "admin");
       }
-      await handleSessionChange(data.session);  // تحديث الجلسة مباشرة بعد تحميل الصفحة
-    } catch (err) {
-      console.error("❌ Unexpected session fetch error:", err);
-      setLoading(false);
+    } else {
+      setIsAdmin(false); // لا يوجد مستخدم
     }
+
+    setLoading(false);
   };
 
   getSessionAndUser();
 
-  const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    await handleSessionChange(session);
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const user = session?.user ?? null;
+    setUser(user);
+
+    if (user) {
+      supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("❌ Error fetching role:", error.message);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(data?.role === "admin");
+          }
+        });
+    } else {
+      setIsAdmin(false);
+    }
   });
 
   return () => {
@@ -98,40 +132,22 @@ useEffect(() => {
 }, []);
 
 
-const login = async (email: string, password: string) => {
-  setLoading(true);
+  const login = async (email: string, password: string) => {
+    setLoading(true);
 
-  try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.error("❌ Login Error:", error.message);
       setLoading(false);
       throw error;
     }
 
-    // عند نجاح تسجيل الدخول، استرجع الجلسة
     const { data: sessionData } = await supabase.auth.getSession();
     await handleSessionChange(sessionData);
-
-    setLoading(false);
-
-    // التوجيه إلى الصفحة المناسبة بعد تسجيل الدخول
-    const navigate = useNavigate();
-    if (isAdmin) {
-      navigate("/admin");  // إذا كان المستخدم admin، انتقل إلى لوحة التحكم
-    } else {
-      navigate("/home");  // أو إلى الصفحة الرئيسية للمستخدم العادي
-    }
-
-  } catch (err) {
-    console.error("❌ Unexpected Error:", err);
-    setLoading(false);
-  }
-};
+  };
 
   const logout = async () => {
     await supabase.auth.signOut();
