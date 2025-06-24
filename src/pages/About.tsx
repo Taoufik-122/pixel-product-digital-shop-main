@@ -143,7 +143,7 @@ const About = () => {
             
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
-                <img src="/home/taoufik/Desktop/pixel-product-digital-shop-main/src/pages/img/WhatsApp Image 2025-05-01 at 21.44.53.jpeg" 
+                <img src="/pages/img/WhatsApp Image 2025-05-01 at 21.44.53.jpeg" 
                   alt="David Rodriguez" 
                   className="w-full h-full object-cover"
                 />
