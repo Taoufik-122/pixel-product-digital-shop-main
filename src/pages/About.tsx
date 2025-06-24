@@ -121,10 +121,10 @@ const About = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-xl font-bold">Michael Johnson</h3>
+              <h3 className="text-xl font-bold">Rida</h3>
               <p className="text-brand-purple">Founder & CEO</p>
               <p className="mt-2 text-gray-600">
-                Former design agency creative director with 15+ years experience in digital product design.
+                Former design agency creative director with 5+ years experience in digital product design.
               </p>
             </div>
             
@@ -135,21 +135,20 @@ const About = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-xl font-bold">Sarah Chen</h3>
-              <p className="text-brand-purple">Chief Design Officer</p>
+              <h3 className="text-xl font-bold">قائد النمور</h3>
+              <p className="text-brand-purple">Chief Officer</p>
               <p className="mt-2 text-gray-600">
-                Award-winning UI/UX designer with expertise in creating intuitive and beautiful interfaces.
               </p>
             </div>
             
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                <img src="/home/taoufik/Desktop/pixel-product-digital-shop-main/src/pages/img/WhatsApp Image 2025-05-01 at 21.44.53.jpeg" 
                   alt="David Rodriguez" 
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-xl font-bold">David Rodriguez</h3>
+              <h3 className="text-xl font-bold">Taoufik</h3>
               <p className="text-brand-purple">Head of Development</p>
               <p className="mt-2 text-gray-600">
                 Full-stack developer passionate about creating tools that empower designers and creators.
