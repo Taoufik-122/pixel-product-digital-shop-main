@@ -130,7 +130,7 @@ const About = () => {
             
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
-                <img src="public/img/WhatsApp Image 2025-06-25 at 14.24.02.jpeg" 
+                <img src="/pixel-product-digital-shop-main/img/WhatsApp Image 2025-06-25 at 14.24.02.jpeg" 
                   alt=" قائد النمور" 
                   className="w-full h-full object-cover"
                 />
