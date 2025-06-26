@@ -10,6 +10,8 @@ import { useAuth } from "./context/AuthContext";
 // Pages
 import Index from "./pages/Index";
 import Products from "./pages/Products";
+import Service from "./pages/Service";
+
 import About from "./pages/About";
 import ProductDetail from "./pages/ProductDetail";
 import CategoryPage from "./pages/CategoryPage";
@@ -72,6 +74,7 @@ if (loading) {
        {/* مسارات المستخدم العادية */}
       <Route path="/" element={<Index />} />
       <Route path="/email-confirmed" element={<EmailConfirmed />} />
+      <Route path="/service" element={<Service />} />
 
       <Route path="/products" element={<Products />} />
       <Route path="/about" element={<About />} />

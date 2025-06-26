@@ -117,7 +117,7 @@ const About = () => {
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
                 <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                  alt="Michael Johnson" 
+                  alt=" Rida" 
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -130,8 +130,8 @@ const About = () => {
             
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=2187&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                  alt="Sarah Chen" 
+                <img src="public/img/WhatsApp Image 2025-06-25 at 14.24.02.jpeg" 
+                  alt=" قائد النمور" 
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -143,8 +143,8 @@ const About = () => {
             
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
-                <img src="/pages/img/WhatsApp Image 2025-05-01 at 21.44.53.jpeg" 
-                  alt="David Rodriguez" 
+                <img src="public/img/taoufik.jpeg" 
+                  alt="Taoufik" 
                   className="w-full h-full object-cover"
                 />
               </div>
