@@ -144,7 +144,7 @@ const About = () => {
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
 
-                <img src="/img/taoufik.jpeg" 
+                <img src="/pixel-product-digital-shop-main/img/taoufik.jpeg" 
                   alt="Taoufik" 
                   className="w-full h-full object-cover"
                 />
