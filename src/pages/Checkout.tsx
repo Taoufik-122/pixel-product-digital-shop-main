@@ -32,40 +32,46 @@ const Checkout = () => {
       navigate("/");
     }
   }, [items, navigate]);
+const generateOrderNumber = () => {
+  return `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+};
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsSubmitting(true);
 
+  const orderDataBase = {
+    date: new Date().toISOString().slice(0, 19).replace("T", " "),
+    first_name: firstNameRef.current?.value || "",
+    last_name: lastNameRef.current?.value || "",
+    email: emailRef.current?.value || "",
+    address: addressRef.current?.value || "",
+    city: cityRef.current?.value || "",
+    postal_code: postalCodeRef.current?.value || "",
+    country: countryRef.current?.value || "",
+  };
 
-const orderData = {
-  order_number: orderNumber,
-  date: new Date().toISOString().slice(0, 19).replace("T", " "),
-  first_name: firstNameRef.current?.value || "",
-  last_name: lastNameRef.current?.value || "",
-  email: emailRef.current?.value || "",
-  address: addressRef.current?.value || "",
-  city: cityRef.current?.value || "",
-  postal_code: postalCodeRef.current?.value || "",
-  country: countryRef.current?.value || "",
-};
+  let inserted = false;
+  let attempts = 0;
 
-  try {
-    const { data, error } = await supabase.from("orders").insert([orderData]);
+  while (!inserted && attempts < 5) {
+    attempts++;
+    const orderNumber = generateOrderNumber();
+    const finalOrderData = { ...orderDataBase, order_number: orderNumber };
 
-    if (error) {
-      toast({ title: "فشل حفظ الطلب", variant: "destructive" });
-    } else {
+    const { data, error } = await supabase.from("orders").insert([finalOrderData]);
+
+    if (!error) {
+      inserted = true;
       clearCart();
 
-      // تكوين رسالة الطلب بنفس التنسيق الأصلي
       const message = `
 ✅ طلب جديد
 رقم الطلب: ${orderNumber}
-الاسم: ${orderData.first_name} ${orderData.last_name}
-البريد: ${orderData.email}
-العنوان: ${orderData.address}, ${orderData.city}, ${orderData.country}
-الرمز البريدي: ${orderData.postal_code}
+الاسم: ${finalOrderData.first_name} ${finalOrderData.last_name}
+البريد: ${finalOrderData.email}
+العنوان: ${finalOrderData.address}, ${finalOrderData.city}, ${finalOrderData.country}
+الرمز البريدي: ${finalOrderData.postal_code}
 المنتجات:
 ${items
   .map(
@@ -78,22 +84,24 @@ ${items
 المجموع: ${totalPrice} درهم
       `.trim();
 
-      // إرسال رسالة WhatsApp
-      const phoneNumber = "212667120556"; // بدون صفر وبكود الدولة
-      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-        message
-      )}`;
+      const phoneNumber = "212667120556";
+      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
       window.open(whatsappURL, "_blank");
 
       navigate("/checkout/success", { state: { orderNumber } });
+    } else if (error.code !== "409") {
+      toast({ title: "فشل حفظ الطلب", variant: "destructive" });
+      break;
     }
-  } catch (error) {
-    toast({ title: "حدث خطأ أثناء إرسال الطلب", variant: "destructive" });
-  } finally {
-    setIsSubmitting(false);
+    // إذا الخطأ 409 يعيد المحاولة برقم جديد
   }
-};
 
+  if (!inserted) {
+    toast({ title: "فشل إنشاء الطلب بعد محاولات متعددة", variant: "destructive" });
+  }
+
+  setIsSubmitting(false);
+};
 
   return (
     <div className="min-h-screen flex flex-col">
