@@ -48,7 +48,6 @@ const orderData = {
   city: cityRef.current?.value || "",
   postal_code: postalCodeRef.current?.value || "",
   country: countryRef.current?.value || "",
-  items, // تأكد من نوع هذا العمود في قاعدة البيانات
 };
 
   try {
