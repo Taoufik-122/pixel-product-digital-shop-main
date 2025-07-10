@@ -141,7 +141,7 @@ ${items
           {/* 📦 نموذج الدفع */}
           <form onSubmit={handleSubmit}>
             {/* 💳 معلومات الدفع */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+           {/*  <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-lg font-medium mb-4 flex items-center">
                 <CreditCard className="mr-2 h-5 w-5 text-brand-purple" />
                 Payment Method
@@ -177,7 +177,7 @@ ${items
                   <Input id="cvc" placeholder="123" required />
                 </div>
               </div>
-            </div>
+            </div>*/}
 
             {/* 🧾 بيانات الفاتورة */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
