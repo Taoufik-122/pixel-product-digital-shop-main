@@ -37,18 +37,19 @@ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsSubmitting(true);
 
-  const orderData = {
-    orderNumber,
-    date: new Date().toISOString().slice(0, 19).replace("T", " "),
-    firstName: firstNameRef.current?.value || "",
-    lastName: lastNameRef.current?.value || "",
-    email: emailRef.current?.value || "",
-    address: addressRef.current?.value || "",
-    city: cityRef.current?.value || "",
-    postalCode: postalCodeRef.current?.value || "",
-    country: countryRef.current?.value || "",
-    items,
-  };
+
+const orderData = {
+  order_number: orderNumber,
+  date: new Date().toISOString().slice(0, 19).replace("T", " "),
+  first_name: firstNameRef.current?.value || "",
+  last_name: lastNameRef.current?.value || "",
+  email: emailRef.current?.value || "",
+  address: addressRef.current?.value || "",
+  city: cityRef.current?.value || "",
+  postal_code: postalCodeRef.current?.value || "",
+  country: countryRef.current?.value || "",
+  items, // تأكد من نوع هذا العمود في قاعدة البيانات
+};
 
   try {
     const { data, error } = await supabase.from("orders").insert([orderData]);
@@ -62,10 +63,10 @@ const handleSubmit = async (e: React.FormEvent) => {
       const message = `
 ✅ طلب جديد
 رقم الطلب: ${orderNumber}
-الاسم: ${orderData.firstName} ${orderData.lastName}
+الاسم: ${orderData.first_name} ${orderData.last_name}
 البريد: ${orderData.email}
 العنوان: ${orderData.address}, ${orderData.city}, ${orderData.country}
-الرمز البريدي: ${orderData.postalCode}
+الرمز البريدي: ${orderData.postal_code}
 المنتجات:
 ${items
   .map(
