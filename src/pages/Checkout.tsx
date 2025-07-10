@@ -24,7 +24,6 @@ const Checkout = () => {
   const cityRef = useRef<HTMLInputElement>(null);
   const postalCodeRef = useRef<HTMLInputElement>(null);
   const countryRef = useRef<HTMLInputElement>(null);
-  const orderNumber = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
   // 🛑 إذا كانت السلة فارغة، ارجع للصفحة الرئيسية
   useEffect(() => {
